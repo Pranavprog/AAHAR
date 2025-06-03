@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { analyzeFoodItem, type AnalyzeFoodItemOutput } from "@/ai/flows/analyze-food-item";
-import { Camera, AlertTriangle, CheckCircle2, XCircle, ShieldAlert, ShieldCheck, ShieldX, Mic, Percent, Droplets, Waves, Leaf, Package, Microscope, Info, Zap, Upload } from "lucide-react";
+import { Camera, AlertTriangle, CheckCircle2, XCircle, ShieldAlert, ShieldCheck, ShieldX, Mic, Percent, Droplets, Waves, Leaf, Package, Microscope, Info, Zap, Upload, Palette } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const EdibilityBadge: React.FC<{ status: AnalyzeFoodItemOutput["edibility"] }> = ({ status }) => {
@@ -273,9 +273,13 @@ export default function ScanPageClient() {
 
   const speakResults = (result: AnalyzeFoodItemOutput | null) => {
     if (result && typeof window !== 'undefined' && window.speechSynthesis) {
-      const utterance = new SpeechSynthesisUtterance(
-        `Scanned item: ${result.identification.name}. Edibility: ${result.edibility}. Water content: ${result.components.waterPercentage} percent. Sugar content: ${result.components.sugarPercentage} percent.`
-      );
+      let textToSpeak = `Scanned item: ${result.identification.name}. Edibility: ${result.edibility}. `;
+      if (result.identification.dominantColors && result.identification.dominantColors.length > 0) {
+        textToSpeak += `Dominant colors observed: ${result.identification.dominantColors.join(', ')}. `;
+      }
+      textToSpeak += `Water content: ${result.components.waterPercentage} percent. Sugar content: ${result.components.sugarPercentage} percent.`;
+      
+      const utterance = new SpeechSynthesisUtterance(textToSpeak);
       utterance.lang = 'en-US';
       window.speechSynthesis.speak(utterance);
     }
@@ -416,6 +420,12 @@ export default function ScanPageClient() {
                     <Progress value={analysisResult.identification.confidence * 100} className="w-1/2 h-2.5 bg-muted/50 [&>div]:bg-primary" /> 
                     <span className="font-medium text-foreground/80">{(analysisResult.identification.confidence * 100).toFixed(0)}%</span>
                   </div>
+                   {analysisResult.identification.dominantColors && analysisResult.identification.dominantColors.length > 0 && (
+                    <div className="mt-2">
+                      <h4 className="text-sm font-medium flex items-center gap-2 text-foreground/80"><Palette size={16} className="text-accent/80"/>Dominant Colors:</h4>
+                      <p className="text-xs text-muted-foreground capitalize">{analysisResult.identification.dominantColors.join(', ')}</p>
+                    </div>
+                  )}
                 </div>
                 
                 <div className="border-t border-border/50 pt-4">
