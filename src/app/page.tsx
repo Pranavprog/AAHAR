@@ -11,15 +11,13 @@ const featuredTips = [
     title: "Wash Fruits Thoroughly",
     description: "Learn the best techniques to remove pesticide residues from your favorite fruits.",
     icon: <Leaf className="w-6 h-6 text-primary" />,
-    image: "https://placehold.co/600x400.png",
-    imageHint: "fruit washing"
+    image: "https://i.postimg.cc/9Qkvydq4/download.jpg",
   },
   {
     title: "Identify Freshness",
     description: "Quick tips to check if your vegetables are fresh and safe to eat.",
     icon: <Lightbulb className="w-6 h-6 text-primary" />,
-    image: "https://placehold.co/600x400.png",
-    imageHint: "fresh vegetables"
+    image: "https://i.postimg.cc/MKp6DYXt/images.jpg",
   },
 ];
 
@@ -65,9 +63,8 @@ export default function HomePage() {
               <p className="text-muted-foreground">Use your device to take a picture of any fruit, vegetable, or food item.</p>
               <div className="overflow-hidden rounded-md mt-4">
                 <Image
-                  src="https://placehold.co/300x200.png"
+                  src="https://i.postimg.cc/Y2Nt6s3J/download.jpg"
                   alt="Scanning food"
-                  data-ai-hint="food scan"
                   width={300}
                   height={200}
                   className="group-hover:scale-105 transition-transform duration-300 ease-in-out"
@@ -86,9 +83,8 @@ export default function HomePage() {
               <p className="text-muted-foreground">Our AI analyzes the image to identify the item and its properties.</p>
               <div className="overflow-hidden rounded-md mt-4">
                <Image
-                 src="https://placehold.co/300x200.png"
+                 src="https://i.postimg.cc/nVKQXTQL/download.jpg"
                  alt="AI Analysis"
-                 data-ai-hint="AI analysis"
                  width={300}
                  height={200}
                  className="group-hover:scale-105 transition-transform duration-300 ease-in-out"
@@ -107,9 +103,8 @@ export default function HomePage() {
               <p className="text-muted-foreground">Receive a detailed breakdown of components, chemicals, and edibility status.</p>
               <div className="overflow-hidden rounded-md mt-4">
                <Image
-                 src="https://placehold.co/300x200.png"
+                 src="https://i.postimg.cc/xd09Fy16/download.jpg"
                  alt="Food Insights"
-                 data-ai-hint="food insights"
                  width={300}
                  height={200}
                  className="group-hover:scale-105 transition-transform duration-300 ease-in-out"
@@ -137,7 +132,7 @@ export default function HomePage() {
         <div className="grid md:grid-cols-1 lg:grid-cols-2 gap-6">
           {featuredTips.map((tip, index) => (
             <div key={index} className="animate-in fade-in slide-in-from-bottom-10 duration-500" style={{ animationDelay: `${600 + index * 100}ms` }}>
-              <TipCard title={tip.title} description={tip.description} icon={tip.icon} image={tip.image} imageHint={tip.imageHint} />
+              <TipCard title={tip.title} description={tip.description} icon={tip.icon} image={tip.image} />
             </div>
           ))}
         </div>

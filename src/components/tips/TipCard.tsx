@@ -8,12 +8,12 @@ interface TipCardProps {
   description: string;
   icon?: ReactNode;
   image: string;
-  imageHint: string;
+  imageHint?: string; // Make imageHint optional
 }
 
 export default function TipCard({ title, description, icon, image, imageHint }: TipCardProps) {
   return (
-    <Card className="shadow-lg group hover:shadow-2xl hover:scale-[1.04] transition-all duration-300 ease-in-out flex flex-col h-full overflow-hidden">
+    <Card className="shadow-lg group hover:shadow-2xl hover:scale-[1.08] transition-all duration-300 ease-in-out flex flex-col h-full overflow-hidden animate-in fade-in-5 slide-in-from-bottom-10">
       <CardHeader className="flex flex-row items-start gap-4 space-y-0 pb-3">
         {icon && <div className="p-2 bg-primary/10 rounded-full group-hover:bg-primary/20 group-hover:scale-110 transition-all duration-300 ease-in-out">{icon}</div>}
         <div className="flex-1">
@@ -28,7 +28,7 @@ export default function TipCard({ title, description, icon, image, imageHint }: 
             data-ai-hint={imageHint}
             width={600}
             height={400}
-            className="object-cover aspect-video group-hover:scale-105 transition-transform duration-300 ease-in-out"
+            className="object-cover aspect-video group-hover:scale-110 transition-transform duration-300 ease-in-out"
           />
         </div>
         <p className="text-sm text-muted-foreground flex-grow">{description}</p>
