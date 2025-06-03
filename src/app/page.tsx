@@ -117,9 +117,8 @@ export default function HomePage() {
                   <p className="text-muted-foreground">For packaged items, enter the barcode number manually.</p>
                    <div className="overflow-hidden rounded-md mt-4 shadow-lg">
                     <Image
-                      src="https://placehold.co/300x200.png"
-                      alt="Barcode entry"
-                      data-ai-hint="barcode hand"
+                      src="https://i.postimg.cc/SNKHk3V1/barcode-scanner-hand.jpg"
+                      alt="Barcode entry with scanner"
                       width={300}
                       height={200}
                       className="group-hover:scale-105 transition-transform duration-300 ease-in-out"
@@ -267,3 +266,5 @@ export default function HomePage() {
     </div>
   );
 }
+
+    
