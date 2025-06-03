@@ -88,17 +88,17 @@ export default function HomePage() {
                 <DialogTitle className="font-headline text-primary flex items-center gap-2">
                   <ScanLine className="h-6 w-6" /> Scanning Your Item: A Quick Guide
                 </DialogTitle>
-                <DialogDescription className="text-left pt-2 space-y-2">
+                <DialogDescription className="text-left pt-2">
                   Follow these steps to scan your food item effectively:
-                  <ol className="list-decimal list-inside space-y-1 pl-4 text-muted-foreground">
-                    <li>Open the AAHAR app and navigate to the 'Scan' page using the header menu.</li>
-                    <li>If using the camera, grant camera access when prompted by your browser. Position your food item clearly in the camera's view.</li>
-                    <li>Alternatively, click 'Upload Image File' to select an image from your device.</li>
-                    <li>Click 'Capture Image' or confirm your upload. A preview will be shown.</li>
-                    <li>If satisfied with the preview, click 'Analyze Image' to let AAHAR process it. If not, use 'Scan Another' to try again.</li>
-                  </ol>
                 </DialogDescription>
               </DialogHeader>
+              <ol className="list-decimal list-inside space-y-1 pl-4 text-sm text-muted-foreground pt-2">
+                <li>Open the AAHAR app and navigate to the 'Scan' page using the header menu.</li>
+                <li>If using the camera, grant camera access when prompted by your browser. Position your food item clearly in the camera's view.</li>
+                <li>Alternatively, click 'Upload Image File' to select an image from your device.</li>
+                <li>Click 'Capture Image' or confirm your upload. A preview will be shown.</li>
+                <li>If satisfied with the preview, click 'Analyze Image' to let AAHAR process it. If not, use 'Scan Another' to try again.</li>
+              </ol>
             </DialogContent>
           </Dialog>
 
@@ -130,17 +130,17 @@ export default function HomePage() {
                 <DialogTitle className="font-headline text-primary flex items-center gap-2">
                   <Layers className="h-6 w-6" /> Understanding AI Analysis
                 </DialogTitle>
-                <DialogDescription className="text-left pt-2 space-y-2">
+                <DialogDescription className="text-left pt-2">
                   Here's what happens when AAHAR's AI analyzes your item:
-                  <ul className="list-disc list-inside space-y-1 pl-4 text-muted-foreground">
-                    <li><strong>Identification:</strong> The AI first tries to identify the food item (e.g., apple, spinach, bread).</li>
-                    <li><strong>Component Estimation:</strong> It estimates key nutritional components like water, sugar, and fiber content based on typical values for the identified item.</li>
-                    <li><strong>Chemical Residue Flagging:</strong> The AI looks for visual cues or patterns that might suggest common treatments or residues. This is an estimation, not a lab-grade chemical test.</li>
-                    <li><strong>Edibility Suggestion:</strong> Based on the overall analysis, a general edibility status (Safe to Eat, Wash & Eat, Unsafe) is provided as a helpful guideline.</li>
-                    <li><strong>Important Note:</strong> AI analysis is a powerful tool for providing quick insights but is for informational purposes only. It should not replace professional nutritional, medical, or food safety advice.</li>
-                  </ul>
                 </DialogDescription>
               </DialogHeader>
+              <ul className="list-disc list-inside space-y-1 pl-4 text-sm text-muted-foreground pt-2">
+                <li><strong>Identification:</strong> The AI first tries to identify the food item (e.g., apple, spinach, bread).</li>
+                <li><strong>Component Estimation:</strong> It estimates key nutritional components like water, sugar, and fiber content based on typical values for the identified item.</li>
+                <li><strong>Chemical Residue Flagging:</strong> The AI looks for visual cues or patterns that might suggest common treatments or residues. This is an estimation, not a lab-grade chemical test.</li>
+                <li><strong>Edibility Suggestion:</strong> Based on the overall analysis, a general edibility status (Safe to Eat, Wash & Eat, Unsafe) is provided as a helpful guideline.</li>
+                <li><strong>Important Note:</strong> AI analysis is a powerful tool for providing quick insights but is for informational purposes only. It should not replace professional nutritional, medical, or food safety advice.</li>
+              </ul>
             </DialogContent>
           </Dialog>
 
@@ -172,19 +172,19 @@ export default function HomePage() {
                 <DialogTitle className="font-headline text-primary flex items-center gap-2">
                   <Lightbulb className="h-6 w-6" /> Interpreting Your Results
                 </DialogTitle>
-                <DialogDescription className="text-left pt-2 space-y-2">
+                <DialogDescription className="text-left pt-2">
                   After analysis, AAHAR provides several key insights:
-                  <ul className="list-disc list-inside space-y-1 pl-4 text-muted-foreground">
-                    <li><strong>Item Identification:</strong> Confirms the name and type of the food item analyzed.</li>
-                    <li><strong>Key Components:</strong> Shows estimated percentages for water, sugar, and fiber.</li>
-                    <li><strong>Vitamins & Minerals:</strong> Lists common vitamins and minerals typically found in the item.</li>
-                    <li><strong>Potential Chemical Residues:</strong> Highlights any potential residues the AI detected. Always consider washing items thoroughly.</li>
-                    <li><strong>Edibility Status:</strong> Offers a recommendation (Safe, Wash & Eat, Unsafe). Use this as a guide and always prioritize your judgment and official food safety information.</li>
-                    <li><strong>Voice Readout:</strong> You can use the microphone icon on the results page to have the key findings read aloud.</li>
-                    <li><strong>Disclaimer:</strong> Always remember the AI analysis is informational. For critical health or safety decisions, consult with a qualified expert.</li>
-                  </ul>
                 </DialogDescription>
               </DialogHeader>
+              <ul className="list-disc list-inside space-y-1 pl-4 text-sm text-muted-foreground pt-2">
+                <li><strong>Item Identification:</strong> Confirms the name and type of the food item analyzed.</li>
+                <li><strong>Key Components:</strong> Shows estimated percentages for water, sugar, and fiber.</li>
+                <li><strong>Vitamins & Minerals:</strong> Lists common vitamins and minerals typically found in the item.</li>
+                <li><strong>Potential Chemical Residues:</strong> Highlights any potential residues the AI detected. Always consider washing items thoroughly.</li>
+                <li><strong>Edibility Status:</strong> Offers a recommendation (Safe, Wash & Eat, Unsafe). Use this as a guide and always prioritize your judgment and official food safety information.</li>
+                <li><strong>Voice Readout:</strong> You can use the microphone icon on the results page to have the key findings read aloud.</li>
+                <li><strong>Disclaimer:</strong> Always remember the AI analysis is informational. For critical health or safety decisions, consult with a qualified expert.</li>
+              </ul>
             </DialogContent>
           </Dialog>
         </div>
