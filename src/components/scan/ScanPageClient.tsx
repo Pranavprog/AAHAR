@@ -4,13 +4,12 @@
 import { useState, useRef, useEffect, type ChangeEvent } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+// Input and Label are no longer needed for file upload
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { analyzeFoodItem, type AnalyzeFoodItemOutput } from "@/ai/flows/analyze-food-item";
-import { UploadCloud, AlertTriangle, CheckCircle2, XCircle, ShieldAlert, ShieldCheck, ShieldX, Mic, Percent, Droplets, Waves, Package, Microscope, Info, Leaf } from "lucide-react";
+import { Camera, AlertTriangle, CheckCircle2, XCircle, ShieldAlert, ShieldCheck, ShieldX, Mic, Percent, Droplets, Waves, Leaf, Package, Microscope, Info, Zap } from "lucide-react"; // Added Camera, Zap
 import { useToast } from "@/hooks/use-toast";
 
 const EdibilityBadge: React.FC<{ status: AnalyzeFoodItemOutput["edibility"] }> = ({ status }) => {
@@ -45,48 +44,115 @@ export default function ScanPageClient() {
   const [analysisResult, setAnalysisResult] = useState<AnalyzeFoodItemOutput | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
+
   const { toast } = useToast();
 
-  const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      // Validate file type
-      if (!file.type.startsWith('image/')) {
+  useEffect(() => {
+    const getCameraPermission = async () => {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         toast({
-          variant: "destructive",
-          title: "Invalid File Type",
-          description: "Please upload an image file (e.g., PNG, JPG, WEBP).",
+          variant: 'destructive',
+          title: 'Camera Not Supported',
+          description: 'Your browser does not support camera access.',
         });
+        setHasCameraPermission(false);
         return;
       }
-      // Validate file size (e.g., 5MB limit)
-      if (file.size > 5 * 1024 * 1024) {
-         toast({
-          variant: "destructive",
-          title: "File Too Large",
-          description: "Please upload an image smaller than 5MB.",
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          videoRef.current.onloadedmetadata = () => { // Ensure video plays after metadata is loaded
+            videoRef.current?.play().catch(err => console.error("Video play failed:", err));
+          };
+        }
+        setHasCameraPermission(true);
+      } catch (err) {
+        console.error('Error accessing camera:', err);
+        setHasCameraPermission(false);
+        toast({
+          variant: 'destructive',
+          title: 'Camera Access Denied',
+          description: 'Please enable camera permissions in your browser settings.',
         });
-        return;
+      }
+    };
+
+    if (hasCameraPermission === null) { // Only request permission if not already determined
+        getCameraPermission();
+    }
+    
+
+    return () => { // Cleanup: stop camera stream when component unmounts
+      if (videoRef.current && videoRef.current.srcObject) {
+        const stream = videoRef.current.srcObject as MediaStream;
+        stream.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, [toast, hasCameraPermission]);
+
+
+  const handleCaptureImage = () => {
+    if (!videoRef.current || !canvasRef.current || hasCameraPermission !== true) {
+      toast({
+        variant: "destructive",
+        title: "Capture Failed",
+        description: "Camera not ready or permission denied.",
+      });
+      return;
+    }
+
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+
+    const context = canvas.getContext('2d');
+    if (context) {
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const dataUri = canvas.toDataURL('image/webp');
+      setImageDataUri(dataUri);
+      setImagePreview(dataUri);
+      setAnalysisResult(null);
+      setError(null);
+
+      // Stop the camera stream tracks after capturing an image
+      if (videoRef.current && videoRef.current.srcObject) {
+        const stream = videoRef.current.srcObject as MediaStream;
+        stream.getTracks().forEach(track => track.stop());
       }
 
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string);
-        setImageDataUri(reader.result as string);
-        setAnalysisResult(null); // Reset previous results
-        setError(null); // Reset previous errors
-      };
-      reader.readAsDataURL(file);
+    } else {
+       toast({
+        variant: "destructive",
+        title: "Capture Failed",
+        description: "Could not get canvas context.",
+      });
     }
   };
+
+  const handleRetake = async () => {
+    setImagePreview(null);
+    setImageDataUri(null);
+    setAnalysisResult(null);
+    setError(null);
+    
+    // Request camera permission again to restart stream
+    setHasCameraPermission(null); // This will trigger the useEffect to request permission
+  };
+
 
   const handleAnalyze = async () => {
     if (!imageDataUri) {
       toast({
         variant: "destructive",
-        title: "No Image",
-        description: "Please upload an image first.",
+        title: "No Image Captured",
+        description: "Please capture an image first.",
       });
       return;
     }
@@ -136,40 +202,66 @@ export default function ScanPageClient() {
     <Card className="w-full shadow-xl">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 font-headline">
-          <UploadCloud className="text-primary" /> Upload Image for Analysis
+          <Camera className="text-primary" /> Use Camera to Scan Item
         </CardTitle>
         <CardDescription>
-          Choose an image file of a food item. The AI will analyze it for you.
+          Position the food item in front of your camera, capture an image, and AAHAR will analyze it.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        <div>
-          <Label htmlFor="food-image" className="sr-only">Food Image</Label>
-          <Input
-            id="food-image"
-            type="file"
-            accept="image/*"
-            ref={fileInputRef}
-            onChange={handleImageChange}
-            className="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
-          />
+        <canvas ref={canvasRef} style={{ display: 'none' }} />
+
+        <div className="border border-dashed border-border rounded-lg p-4 flex flex-col items-center space-y-4 min-h-[300px] justify-center">
+          {imagePreview ? (
+            <>
+              <p className="text-sm text-muted-foreground">Captured Image Preview:</p>
+              <Image
+                src={imagePreview}
+                alt="Food item preview"
+                width={300}
+                height={300}
+                className="rounded-md object-contain max-h-[300px] shadow-md"
+              />
+            </>
+          ) : (
+            <div className="w-full max-w-md aspect-video bg-muted rounded-md overflow-hidden relative">
+              <video ref={videoRef} className="w-full h-full object-cover" autoPlay playsInline muted />
+              {hasCameraPermission === null && (
+                <div className="absolute inset-0 flex items-center justify-center bg-background/70">
+                  <p className="text-muted-foreground p-4 text-center">Initializing camera... Please allow camera access if prompted.</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {hasCameraPermission === false && !imagePreview && (
+            <Alert variant="destructive" className="w-full">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertTitle>Camera Access Required</AlertTitle>
+              <AlertDescription>
+                AAHAR needs access to your camera to scan items. Please enable camera permissions in your browser settings and refresh the page if necessary.
+              </AlertDescription>
+            </Alert>
+          )}
         </div>
 
-        {imagePreview && (
-          <div className="mt-4 border border-dashed border-border rounded-lg p-4 flex flex-col items-center space-y-4">
-            <p className="text-sm text-muted-foreground">Image Preview:</p>
-            <Image
-              src={imagePreview}
-              alt="Food item preview"
-              width={300}
-              height={300}
-              className="rounded-md object-contain max-h-[300px] shadow-md"
-            />
-            <Button onClick={handleAnalyze} disabled={isLoading} className="bg-accent hover:bg-accent/90 text-accent-foreground">
-              {isLoading ? "Analyzing..." : "Analyze Image"}
+        <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
+          {!imagePreview && hasCameraPermission === true && (
+            <Button onClick={handleCaptureImage} disabled={isLoading} className="bg-accent hover:bg-accent/90 text-accent-foreground w-full sm:w-auto">
+              <Camera className="mr-2 h-5 w-5" /> Capture Image
             </Button>
-          </div>
-        )}
+          )}
+          {imagePreview && (
+            <>
+              <Button onClick={handleAnalyze} disabled={isLoading || !imageDataUri} className="bg-primary hover:bg-primary/90 w-full sm:w-auto">
+                <Zap className="mr-2 h-5 w-5" /> Analyze Captured Image
+              </Button>
+              <Button onClick={handleRetake} variant="outline" disabled={isLoading} className="w-full sm:w-auto">
+                Retake Photo
+              </Button>
+            </>
+          )}
+        </div>
 
         {isLoading && (
           <div className="space-y-2 pt-4">
@@ -236,13 +328,7 @@ export default function ScanPageClient() {
               )}
             </CardContent>
             <CardFooter>
-                <Button variant="outline" onClick={() => {
-                    setImagePreview(null);
-                    setImageDataUri(null);
-                    setAnalysisResult(null);
-                    setError(null);
-                    if (fileInputRef.current) fileInputRef.current.value = "";
-                }}>Scan Another Item</Button>
+                <Button variant="outline" onClick={handleRetake}>Scan Another Item</Button>
             </CardFooter>
           </Card>
         )}
