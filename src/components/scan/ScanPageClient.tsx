@@ -51,114 +51,103 @@ export default function ScanPageClient() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null); 
+  const streamRef = useRef<MediaStream | null>(null);
 
   const { toast } = useToast();
 
   useEffect(() => {
-    let currentStream: MediaStream | null = null;
-    let streamKilled = false; 
-
-    const setupCamera = async () => {
-      if (imagePreview) { 
-        if (videoRef.current && videoRef.current.srcObject) {
-            const stream = videoRef.current.srcObject as MediaStream;
-            stream.getTracks().forEach(track => track.stop());
-            videoRef.current.srcObject = null;
-        }
-        if (hasCameraPermission !== false) setHasCameraPermission(false); 
-        return;
+    if (imagePreview) {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+        streamRef.current = null;
       }
-
-      if (hasCameraPermission === false) {
-          if (videoRef.current && videoRef.current.srcObject) {
-            (videoRef.current.srcObject as MediaStream).getTracks().forEach(track => track.stop());
-            videoRef.current.srcObject = null;
-          }
-          return;
+      if (videoRef.current) {
+        videoRef.current.srcObject = null;
       }
-      
+      return;
+    }
+
+    if (hasCameraPermission !== null) {
+      // If permission status is already determined (true or false), don't re-initialize
+      return;
+    }
+
+    // At this point: !imagePreview && hasCameraPermission === null
+    // Attempt to initialize the camera.
+    let isEffectMounted = true;
+
+    const getCameraStream = async () => {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        toast({
-          variant: 'destructive',
-          title: 'Camera Not Supported',
-          description: 'Your browser does not support camera access. Try uploading a file.',
-        });
-        setHasCameraPermission(false);
+        if (isEffectMounted) {
+          toast({
+            variant: 'destructive',
+            title: 'Camera Not Supported',
+            description: 'Your browser does not support camera access. Try uploading a file.',
+          });
+          setHasCameraPermission(false);
+        }
         return;
       }
 
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-        if (streamKilled) { 
+        if (!isEffectMounted) {
           stream.getTracks().forEach(track => track.stop());
           return;
         }
-        currentStream = stream; 
-        
+
+        streamRef.current = stream;
         if (videoRef.current) {
-          videoRef.current.srcObject = currentStream;
-          videoRef.current.onloadedmetadata = () => {
-             if (videoRef.current && videoRef.current.srcObject === currentStream) { 
-                videoRef.current.play()
-                  .then(() => {
-                    if (!streamKilled) {
-                      setHasCameraPermission(true); 
-                    } else {
-                       currentStream?.getTracks().forEach(track => track.stop());
-                       if(videoRef.current) videoRef.current.srcObject = null;
-                    }
-                  })
-                  .catch(err => {
-                    console.error("Video play failed:", err);
-                    if (!streamKilled) {
-                      toast({
-                        variant: 'destructive',
-                        title: 'Camera Playback Error',
-                        description: `Could not start camera preview. Ensure it's not in use by another app or try refreshing. Error: ${err.message}`,
-                      });
-                      setHasCameraPermission(false); 
-                      currentStream?.getTracks().forEach(track => track.stop());
-                      if(videoRef.current) videoRef.current.srcObject = null;
-                    }
-                  });
-             }
-          };
-        } else { 
-            stream.getTracks().forEach(track => track.stop()); 
+          videoRef.current.srcObject = stream;
+          // autoPlay on the video element should handle playing.
+          // Consider adding listeners for 'playing' or 'error' on videoRef.current for more robustness if autoPlay is unreliable.
+          setHasCameraPermission(true);
+        } else {
+          stream.getTracks().forEach(track => track.stop()); // videoRef not ready
+          if (isEffectMounted) setHasCameraPermission(false);
         }
       } catch (err) {
         console.error('Error accessing camera:', err);
-        setHasCameraPermission(false); 
-        toast({
-          variant: 'destructive',
-          title: 'Camera Access Denied',
-          description: 'Please enable camera permissions in your browser settings. You can also upload a file.',
-        });
+        if (isEffectMounted) {
+          setHasCameraPermission(false);
+          toast({
+            variant: 'destructive',
+            title: 'Camera Access Denied',
+            description: 'Please enable camera permissions in your browser settings. You can also upload a file.',
+          });
+        }
       }
     };
 
-    if (hasCameraPermission === null && !imagePreview) { 
-      setupCamera();
-    }
+    getCameraStream();
 
     return () => {
-      streamKilled = true; 
-      if (currentStream) {
-        currentStream.getTracks().forEach(track => track.stop());
+      isEffectMounted = false;
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+        streamRef.current = null;
       }
-      if (videoRef.current && videoRef.current.srcObject === currentStream) { 
+      if (videoRef.current) {
         videoRef.current.srcObject = null;
       }
     };
-  }, [hasCameraPermission, imagePreview, toast]); 
+  }, [imagePreview, hasCameraPermission]);
 
 
   const handleCaptureImage = () => {
-    if (!videoRef.current || !canvasRef.current || hasCameraPermission !== true || !videoRef.current.srcObject || !(videoRef.current.srcObject as MediaStream).active) {
+    if (
+      !videoRef.current ||
+      !canvasRef.current ||
+      !videoRef.current.srcObject ||
+      videoRef.current.readyState < videoRef.current.HAVE_ENOUGH_DATA ||
+      videoRef.current.paused ||
+      videoRef.current.ended ||
+      hasCameraPermission !== true
+    ) {
       toast({
         variant: "destructive",
         title: "Capture Failed",
-        description: "Camera not ready, permission denied, or stream inactive. Please ensure camera is working and try again.",
+        description: "Camera is not ready, permission might be denied, or the video stream is not active/playable. Please ensure a live camera feed is visible.",
       });
       return;
     }
@@ -178,12 +167,7 @@ export default function ScanPageClient() {
       setAnalysisResult(null);
       setError(null);
 
-      if (videoRef.current && videoRef.current.srcObject) {
-        const stream = videoRef.current.srcObject as MediaStream;
-        stream.getTracks().forEach(track => track.stop());
-        videoRef.current.srcObject = null; 
-      }
-      setHasCameraPermission(false); 
+      // Stream will be stopped by the useEffect when imagePreview updates
     } else {
        toast({
         variant: "destructive",
@@ -196,19 +180,20 @@ export default function ScanPageClient() {
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+        streamRef.current = null;
+      }
+      if (videoRef.current) {
+        videoRef.current.srcObject = null;
+      }
+      setHasCameraPermission(false); // Explicitly set to false as we are using file upload
+
       const reader = new FileReader();
       reader.onloadend = () => {
         const dataUri = reader.result as string;
         setImageDataUri(dataUri);
         setImagePreview(dataUri); 
-        
-        if (videoRef.current && videoRef.current.srcObject) {
-          const stream = videoRef.current.srcObject as MediaStream;
-          stream.getTracks().forEach(track => track.stop());
-          videoRef.current.srcObject = null;
-        }
-        setHasCameraPermission(false); 
-        
         setAnalysisResult(null);
         setError(null);
       };
@@ -220,9 +205,11 @@ export default function ScanPageClient() {
   };
 
   const handleRetake = () => {
-    if (videoRef.current && videoRef.current.srcObject) {
-        const stream = videoRef.current.srcObject as MediaStream;
-        stream.getTracks().forEach(track => track.stop());
+    if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+        streamRef.current = null;
+    }
+    if (videoRef.current) {
         videoRef.current.srcObject = null;
     }
     
@@ -234,8 +221,7 @@ export default function ScanPageClient() {
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
-    
-    setHasCameraPermission(null); 
+    setHasCameraPermission(null);  // Reset to null to trigger camera re-initialization
   };
 
 
@@ -323,7 +309,7 @@ export default function ScanPageClient() {
           ) : (
             <>
               <div className="w-full max-w-md aspect-video bg-muted/70 rounded-md overflow-hidden relative shadow-inner">
-                <video ref={videoRef} className="w-full h-full object-cover" playsInline muted />
+                <video ref={videoRef} className="w-full h-full object-cover" playsInline autoPlay muted />
                 {hasCameraPermission === null && (
                   <div className="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm">
                     <p className="text-muted-foreground p-4 text-center">Initializing camera... Please allow camera access if prompted.</p>
@@ -336,15 +322,6 @@ export default function ScanPageClient() {
                 )}
               </div>
             </>
-          )}
-           {hasCameraPermission === false && !imagePreview && ( 
-            <Alert variant="destructive" className="w-full bg-destructive/20 border-destructive/50 text-destructive-foreground">
-              <AlertTriangle className="h-5 w-5" />
-              <AlertTitle>Camera Access Denied or Unavailable</AlertTitle>
-              <AlertDescription>
-                AAHAR needs access to your camera to scan items. Please enable camera permissions in your browser settings or upload an image file.
-              </AlertDescription>
-            </Alert>
           )}
         </div>
 
