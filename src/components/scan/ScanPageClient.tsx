@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useRef, useEffect, type ChangeEvent } from "react";
@@ -9,7 +10,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { analyzeFoodItem, type AnalyzeFoodItemOutput } from "@/ai/flows/analyze-food-item";
-import { UploadCloud, AlertTriangle, CheckCircle2, XCircle, ShieldAlert, ShieldCheck, ShieldX, Mic, Percent, Droplets, Waves, Package, Microscope, Info } from "lucide-react";
+import { UploadCloud, AlertTriangle, CheckCircle2, XCircle, ShieldAlert, ShieldCheck, ShieldX, Mic, Percent, Droplets, Waves, Package, Microscope, Info, Leaf } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const EdibilityBadge: React.FC<{ status: AnalyzeFoodItemOutput["edibility"] }> = ({ status }) => {
