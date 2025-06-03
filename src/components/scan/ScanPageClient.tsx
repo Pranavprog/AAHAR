@@ -52,10 +52,19 @@ export default function ScanPageClient() {
   const { toast } = useToast();
 
   useEffect(() => {
-    let streamKilled = false; 
     let currentStream: MediaStream | null = null;
+    let streamKilled = false;
 
     const setupCamera = async () => {
+      if (imagePreview) { // Don't initialize camera if there's already an image preview (e.g., from file upload)
+        if (videoRef.current && videoRef.current.srcObject) {
+            const stream = videoRef.current.srcObject as MediaStream;
+            stream.getTracks().forEach(track => track.stop());
+            videoRef.current.srcObject = null;
+        }
+        setHasCameraPermission(false); // Explicitly set to false if an image is previewed
+        return;
+      }
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         toast({
           variant: 'destructive',
@@ -68,30 +77,30 @@ export default function ScanPageClient() {
 
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-        if (streamKilled) { 
-            stream.getTracks().forEach(track => track.stop());
-            return;
+        if (streamKilled) {
+          stream.getTracks().forEach(track => track.stop());
+          return;
         }
         currentStream = stream;
         
         if (videoRef.current) {
-          videoRef.current.srcObject = stream;
+          videoRef.current.srcObject = currentStream;
           videoRef.current.onloadedmetadata = () => {
-            if (videoRef.current && videoRef.current.srcObject === currentStream) {
+            if (videoRef.current && videoRef.current.srcObject === currentStream) { // Ensure we are playing the current stream
               videoRef.current.play().catch(err => {
                 console.error("Video play failed:", err);
                 toast({
                   variant: 'destructive',
                   title: 'Camera Playback Error',
-                  description: 'Could not start camera preview. Ensure camera is not in use or try refreshing.',
+                  description: `Could not start camera preview. Ensure camera is not in use or try refreshing. Error: ${err.message}`,
                 });
               });
             }
           };
           setHasCameraPermission(true);
-        } else {
+        } else { // videoRef.current is null (component unmounted before stream assigned)
             stream.getTracks().forEach(track => track.stop());
-            setHasCameraPermission(false);
+            setHasCameraPermission(false); 
         }
       } catch (err) {
         console.error('Error accessing camera:', err);
@@ -109,11 +118,11 @@ export default function ScanPageClient() {
     }
 
     return () => {
-      streamKilled = true; 
+      streamKilled = true;
       if (currentStream) {
         currentStream.getTracks().forEach(track => track.stop());
       }
-      if (videoRef.current && videoRef.current.srcObject === currentStream) {
+      if (videoRef.current && videoRef.current.srcObject === currentStream) { // Only clear srcObject if it's the one this effect instance managed
         videoRef.current.srcObject = null;
       }
     };
@@ -145,12 +154,13 @@ export default function ScanPageClient() {
       setAnalysisResult(null);
       setError(null);
 
+      // Stop the camera stream after capturing
       if (videoRef.current && videoRef.current.srcObject) {
         const stream = videoRef.current.srcObject as MediaStream;
         stream.getTracks().forEach(track => track.stop());
-        videoRef.current.srcObject = null; 
+        videoRef.current.srcObject = null; // Explicitly clear the srcObject
       }
-      setHasCameraPermission(false); 
+      setHasCameraPermission(false); // Indicate camera is no longer active/needed for preview
     } else {
        toast({
         variant: "destructive",
@@ -167,41 +177,46 @@ export default function ScanPageClient() {
       reader.onloadend = () => {
         const dataUri = reader.result as string;
         setImageDataUri(dataUri);
-        setImagePreview(dataUri);
+        setImagePreview(dataUri); // This will trigger the useEffect to stop the camera if it was running
         
+        // Ensure camera stream is stopped if it was active
         if (videoRef.current && videoRef.current.srcObject) {
           const stream = videoRef.current.srcObject as MediaStream;
           stream.getTracks().forEach(track => track.stop());
           videoRef.current.srcObject = null;
         }
-        setHasCameraPermission(false); 
+        setHasCameraPermission(false); // Explicitly set to false as we are using a file
         
         setAnalysisResult(null);
         setError(null);
       };
       reader.readAsDataURL(file);
     }
+    // Reset file input to allow selecting the same file again
     if (event.target) {
       event.target.value = ''; 
     }
   };
 
   const handleRetake = () => {
-    setImagePreview(null);
-    setImageDataUri(null);
-    setAnalysisResult(null);
-    setError(null);
-    
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-    
+    // Stop any existing camera stream before resetting
     if (videoRef.current && videoRef.current.srcObject) {
         const stream = videoRef.current.srcObject as MediaStream;
         stream.getTracks().forEach(track => track.stop());
         videoRef.current.srcObject = null;
     }
     
+    setImagePreview(null);
+    setImageDataUri(null);
+    setAnalysisResult(null);
+    setError(null);
+    
+    // Clear the file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+    
+    // Set hasCameraPermission to null to trigger useEffect to re-initialize camera
     setHasCameraPermission(null); 
   };
 
@@ -249,6 +264,7 @@ export default function ScanPageClient() {
   };
   
   useEffect(() => {
+    // Cleanup speech synthesis on component unmount
     return () => {
       if (typeof window !== 'undefined' && window.speechSynthesis) {
         window.speechSynthesis.cancel();
@@ -258,7 +274,7 @@ export default function ScanPageClient() {
 
 
   return (
-    <Card className="w-full shadow-xl">
+    <Card className="w-full border border-primary/40 shadow-[0_0_15px_3px_hsl(var(--primary)/0.4)]">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 font-headline">
           <Camera className="text-primary" /> Scan Item
@@ -285,14 +301,16 @@ export default function ScanPageClient() {
             </>
           ) : (
             <>
+              {/* Camera View or Placeholder */}
               <div className="w-full max-w-md aspect-video bg-muted rounded-md overflow-hidden relative">
                 <video ref={videoRef} className="w-full h-full object-cover" playsInline muted />
+                {/* Initializing / No Permission Messages */}
                 {hasCameraPermission === null && (
                   <div className="absolute inset-0 flex items-center justify-center bg-background/70">
                     <p className="text-muted-foreground p-4 text-center">Initializing camera... Please allow camera access if prompted.</p>
                   </div>
                 )}
-                 {hasCameraPermission === false && ( 
+                 {hasCameraPermission === false && ( // Only show this if camera explicitly failed or denied, and no image preview
                   <div className="absolute inset-0 flex items-center justify-center bg-background/80">
                     <p className="text-muted-foreground p-4 text-center">Camera not available or permission denied. You can upload a file instead.</p>
                   </div>
@@ -301,6 +319,7 @@ export default function ScanPageClient() {
              
             </>
           )}
+           {/* Alert for camera permission specifically when no image is yet previewed */}
            {hasCameraPermission === false && !imagePreview && ( 
             <Alert variant="destructive" className="w-full">
               <AlertTriangle className="h-4 w-4" />
@@ -312,6 +331,7 @@ export default function ScanPageClient() {
           )}
         </div>
 
+        {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
           {!imagePreview && (
             <>
@@ -337,7 +357,7 @@ export default function ScanPageClient() {
 
         {isLoading && (
           <div className="space-y-2 pt-4">
-            <Progress value={undefined} className="w-full h-2 [&>div]:bg-primary" />
+            <Progress value={undefined} className="w-full h-2 [&>div]:bg-primary" /> {/* Indeterminate progress */}
             <p className="text-sm text-primary text-center animate-pulse">AI is analyzing your item, please wait...</p>
           </div>
         )}
@@ -359,7 +379,7 @@ export default function ScanPageClient() {
                 The information provided by AAHAR is generated by an AI model. While we aim for accuracy, this analysis is for informational purposes only and may not be 100% complete or precise. It should not be used as a substitute for professional medical, nutritional, or food safety advice. Always consult with a qualified expert for critical decisions regarding your health and food consumption.
               </AlertDescription>
             </Alert>
-            <Card className="bg-background/50 shadow-inner">
+            <Card className="bg-background/50 shadow-inner border border-accent/40 shadow-[0_0_12px_2px_hsl(var(--accent)/0.3)]">
               <CardHeader>
                 <CardTitle className="font-headline text-2xl text-primary flex items-center gap-2">
                   <Package size={28} /> Analysis Complete: {analysisResult.identification.name}
