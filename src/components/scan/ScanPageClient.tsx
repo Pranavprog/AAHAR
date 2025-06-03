@@ -4,12 +4,11 @@
 import { useState, useRef, useEffect, type ChangeEvent } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-// Input and Label are no longer needed for file upload
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { analyzeFoodItem, type AnalyzeFoodItemOutput } from "@/ai/flows/analyze-food-item";
-import { Camera, AlertTriangle, CheckCircle2, XCircle, ShieldAlert, ShieldCheck, ShieldX, Mic, Percent, Droplets, Waves, Leaf, Package, Microscope, Info, Zap } from "lucide-react"; // Added Camera, Zap
+import { Camera, AlertTriangle, CheckCircle2, XCircle, ShieldAlert, ShieldCheck, ShieldX, Mic, Percent, Droplets, Waves, Leaf, Package, Microscope, Info, Zap } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const EdibilityBadge: React.FC<{ status: AnalyzeFoodItemOutput["edibility"] }> = ({ status }) => {
@@ -47,11 +46,13 @@ export default function ScanPageClient() {
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
+  const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null); // null: undetermined, true: granted, false: denied
 
   const { toast } = useToast();
 
   useEffect(() => {
+    let activeStream: MediaStream | null = null;
+
     const getCameraPermission = async () => {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         toast({
@@ -64,10 +65,18 @@ export default function ScanPageClient() {
       }
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        activeStream = stream;
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
-          videoRef.current.onloadedmetadata = () => { // Ensure video plays after metadata is loaded
-            videoRef.current?.play().catch(err => console.error("Video play failed:", err));
+          videoRef.current.onloadedmetadata = () => {
+            videoRef.current?.play().catch(err => {
+              console.error("Video play failed:", err);
+              toast({
+                variant: 'destructive',
+                title: 'Camera Playback Error',
+                description: 'Could not start camera preview. Please ensure your camera is not in use by another application.',
+              });
+            });
           };
         }
         setHasCameraPermission(true);
@@ -79,29 +88,35 @@ export default function ScanPageClient() {
           title: 'Camera Access Denied',
           description: 'Please enable camera permissions in your browser settings.',
         });
+        if (activeStream) {
+          activeStream.getTracks().forEach(track => track.stop());
+          activeStream = null;
+        }
       }
     };
 
-    if (hasCameraPermission === null) { // Only request permission if not already determined
-        getCameraPermission();
+    if (hasCameraPermission === null) {
+      getCameraPermission();
     }
-    
 
-    return () => { // Cleanup: stop camera stream when component unmounts
-      if (videoRef.current && videoRef.current.srcObject) {
-        const stream = videoRef.current.srcObject as MediaStream;
-        stream.getTracks().forEach(track => track.stop());
+    return () => {
+      if (activeStream) {
+        activeStream.getTracks().forEach(track => track.stop());
+      }
+      // Ensure srcObject is cleared if the videoRef is still valid and its srcObject was our activeStream
+      if (videoRef.current && videoRef.current.srcObject === activeStream) {
+        videoRef.current.srcObject = null;
       }
     };
   }, [toast, hasCameraPermission]);
 
 
   const handleCaptureImage = () => {
-    if (!videoRef.current || !canvasRef.current || hasCameraPermission !== true) {
+    if (!videoRef.current || !canvasRef.current || hasCameraPermission !== true || !videoRef.current.srcObject || !(videoRef.current.srcObject as MediaStream).active) {
       toast({
         variant: "destructive",
         title: "Capture Failed",
-        description: "Camera not ready or permission denied.",
+        description: "Camera not ready, permission denied, or stream inactive.",
       });
       return;
     }
@@ -115,7 +130,7 @@ export default function ScanPageClient() {
     const context = canvas.getContext('2d');
     if (context) {
       context.drawImage(video, 0, 0, canvas.width, canvas.height);
-      const dataUri = canvas.toDataURL('image/webp');
+      const dataUri = canvas.toDataURL('image/webp'); // Use webp for potentially smaller file size
       setImageDataUri(dataUri);
       setImagePreview(dataUri);
       setAnalysisResult(null);
@@ -125,6 +140,7 @@ export default function ScanPageClient() {
       if (videoRef.current && videoRef.current.srcObject) {
         const stream = videoRef.current.srcObject as MediaStream;
         stream.getTracks().forEach(track => track.stop());
+        // videoRef.current.srcObject = null; // Optional: clear srcObject
       }
 
     } else {
@@ -142,8 +158,8 @@ export default function ScanPageClient() {
     setAnalysisResult(null);
     setError(null);
     
-    // Request camera permission again to restart stream
-    setHasCameraPermission(null); // This will trigger the useEffect to request permission
+    // Setting hasCameraPermission to null will trigger the useEffect to re-request permission and restart the stream
+    setHasCameraPermission(null); 
   };
 
 
@@ -190,6 +206,7 @@ export default function ScanPageClient() {
   };
   
   useEffect(() => {
+    // Cleanup for speech synthesis
     return () => {
       if (typeof window !== 'undefined' && window.speechSynthesis) {
         window.speechSynthesis.cancel();
@@ -225,7 +242,7 @@ export default function ScanPageClient() {
             </>
           ) : (
             <div className="w-full max-w-md aspect-video bg-muted rounded-md overflow-hidden relative">
-              <video ref={videoRef} className="w-full h-full object-cover" autoPlay playsInline muted />
+              <video ref={videoRef} className="w-full h-full object-cover" playsInline autoPlay muted />
               {hasCameraPermission === null && (
                 <div className="absolute inset-0 flex items-center justify-center bg-background/70">
                   <p className="text-muted-foreground p-4 text-center">Initializing camera... Please allow camera access if prompted.</p>
@@ -336,3 +353,4 @@ export default function ScanPageClient() {
     </Card>
   );
 }
+
