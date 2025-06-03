@@ -26,7 +26,7 @@ const featuredTips = [
 export default function HomePage() {
   return (
     <div className="space-y-12">
-      <section className="text-center py-12 md:py-20 bg-gradient-to-br from-primary/20 via-background to-background rounded-lg shadow-md overflow-hidden animate-in fade-in duration-700">
+      <section className="text-center py-12 md:py-20 bg-gradient-to-br from-primary/25 via-accent/10 to-background rounded-lg shadow-xl overflow-hidden animate-in fade-in duration-700">
         <div className="container mx-auto px-4">
           <Leaf className="mx-auto text-primary h-16 w-16 mb-6 hover:scale-110 hover:rotate-[-10deg] transition-all duration-300 ease-in-out cursor-pointer animate-in fade-in zoom-in-50 delay-200 duration-500" />
           <h1 className="text-4xl md:text-5xl font-headline font-bold mb-6 text-foreground animate-in fade-in slide-in-from-top-10 delay-300 duration-500">
@@ -54,7 +54,7 @@ export default function HomePage() {
       <section className="container mx-auto px-4 animate-in fade-in slide-in-from-bottom-12 duration-500 delay-200">
         <h2 className="text-3xl font-headline font-semibold text-center mb-10 text-foreground animate-in fade-in slide-in-from-bottom-8 duration-500 delay-300">How It Works</h2>
         <div className="grid md:grid-cols-3 gap-8">
-          <Card className="shadow-lg group hover:shadow-2xl hover:scale-[1.05] transition-all duration-300 ease-in-out animate-in fade-in slide-in-from-bottom-10 duration-500 delay-400">
+          <Card className="shadow-lg group hover:shadow-2xl hover:scale-[1.08] transition-all duration-300 ease-in-out animate-in fade-in slide-in-from-bottom-10 duration-500 delay-400">
             <CardHeader>
               <div className="p-3 bg-primary/20 rounded-full w-fit mb-3 group-hover:scale-110 transition-transform duration-300 ease-in-out">
                 <ScanLine className="h-8 w-8 text-primary" />
@@ -75,7 +75,7 @@ export default function HomePage() {
               </div>
             </CardContent>
           </Card>
-          <Card className="shadow-lg group hover:shadow-2xl hover:scale-[1.05] transition-all duration-300 ease-in-out animate-in fade-in slide-in-from-bottom-10 duration-500 delay-500">
+          <Card className="shadow-lg group hover:shadow-2xl hover:scale-[1.08] transition-all duration-300 ease-in-out animate-in fade-in slide-in-from-bottom-10 duration-500 delay-500">
             <CardHeader>
               <div className="p-3 bg-primary/20 rounded-full w-fit mb-3 group-hover:scale-110 transition-transform duration-300 ease-in-out">
                  <Layers className="h-8 w-8 text-primary"/>
@@ -96,7 +96,7 @@ export default function HomePage() {
               </div>
             </CardContent>
           </Card>
-          <Card className="shadow-lg group hover:shadow-2xl hover:scale-[1.05] transition-all duration-300 ease-in-out animate-in fade-in slide-in-from-bottom-10 duration-500 delay-600">
+          <Card className="shadow-lg group hover:shadow-2xl hover:scale-[1.08] transition-all duration-300 ease-in-out animate-in fade-in slide-in-from-bottom-10 duration-500 delay-600">
             <CardHeader>
                <div className="p-3 bg-primary/20 rounded-full w-fit mb-3 group-hover:scale-110 transition-transform duration-300 ease-in-out">
                 <Lightbulb className="h-8 w-8 text-primary" />

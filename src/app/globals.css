@@ -57,5 +57,10 @@
   }
   body {
     @apply bg-background text-foreground;
+    background-image:
+      radial-gradient(ellipse at top left, hsla(var(--primary) / 0.10) 0%, transparent 40%),
+      radial-gradient(ellipse at bottom right, hsla(var(--accent) / 0.10) 0%, transparent 40%),
+      radial-gradient(ellipse at center, hsla(var(--secondary) / 0.05) 0%, transparent 30%);
+    background-attachment: fixed;
   }
 }
