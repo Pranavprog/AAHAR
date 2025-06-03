@@ -1,3 +1,4 @@
+
 import TipCard from '@/components/tips/TipCard';
 import { Lightbulb, Leaf, ShieldCheck, Info } from 'lucide-react';
 
@@ -11,43 +12,37 @@ const tips = [
     title: "Properly Wash Apples",
     description: "Remove pesticide residue by soaking apples in a solution of baking soda and water for 12-15 minutes.",
     icon: <Leaf className="w-8 h-8 text-primary" />,
-    image: "https://placehold.co/600x400.png",
-    imageHint: "apples washing"
+    image: "https://i.postimg.cc/5yn4wsvc/download.jpg",
   },
   {
     title: "Clean Leafy Greens",
     description: "Swish leafy greens in a large bowl of cold water, then lift them out to leave grit behind. Repeat if necessary.",
     icon: <Leaf className="w-8 h-8 text-primary" />,
-    image: "https://placehold.co/600x400.png",
-    imageHint: "leafy greens"
+    image: "https://i.postimg.cc/fTg3pfqW/fresh-vegetables-wash-sink-600nw-363345332.webp",
   },
   {
     title: "Detoxify Berries",
     description: "Gently rinse berries in a diluted vinegar solution (1 part vinegar to 3 parts water) to remove mold and bacteria.",
     icon: <ShieldCheck className="w-8 h-8 text-primary" />,
-    image: "https://placehold.co/600x400.png",
-    imageHint: "berries cleaning"
+    image: "https://i.postimg.cc/NGyX7VjG/download.jpg",
   },
   {
     title: "Storing Vegetables for Freshness",
     description: "Learn optimal storage methods for different types of vegetables to maintain their freshness and nutritional value longer.",
     icon: <Lightbulb className="w-8 h-8 text-primary" />,
-    image: "https://placehold.co/600x400.png",
-    imageHint: "vegetable storage"
+    image: "https://i.postimg.cc/CMNQVRV6/images.jpg",
   },
    {
     title: "Understanding Food Labels",
     description: "A quick guide to deciphering common terms on food labels like 'organic', 'natural', and 'non-GMO'.",
     icon: <Info className="w-8 h-8 text-primary" />,
-    image: "https://placehold.co/600x400.png",
-    imageHint: "food labels"
+    image: "https://i.postimg.cc/QN2qB5rM/download.jpg",
   },
   {
     title: "Reducing Food Waste",
     description: "Smart tips on meal planning, proper storage, and using leftovers to minimize food waste at home.",
     icon: <Lightbulb className="w-8 h-8 text-primary" />,
-    image: "https://placehold.co/600x400.png",
-    imageHint: "food waste"
+    image: "https://i.postimg.cc/Zn2snDxY/download.jpg",
   }
 ];
 
@@ -69,7 +64,6 @@ export default function TipsPage() {
             description={tip.description} 
             icon={tip.icon}
             image={tip.image}
-            imageHint={tip.imageHint}
           />
         ))}
       </div>
