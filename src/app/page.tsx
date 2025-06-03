@@ -32,9 +32,9 @@ const featuredTips = [
 export default function HomePage() {
   return (
     <div className="space-y-16">
-      <section className="text-center py-16 md:py-24 bg-gradient-to-br from-primary/10 via-accent/5 to-background rounded-xl shadow-2xl overflow-hidden">
+      <section className="text-center py-16 md:py-24 bg-gradient-to-br from-primary/10 via-accent/5 to-background rounded-xl shadow-2xl overflow-hidden [perspective:1000px]">
         <div className="container mx-auto px-4">
-          <Leaf className="mx-auto text-primary h-20 w-20 mb-8 hover:scale-110 hover:rotate-[-10deg] transition-all duration-300 ease-in-out cursor-pointer animate-in fade-in zoom-in-50 delay-200 duration-500" />
+          <Leaf className="mx-auto text-primary h-20 w-20 mb-8 transition-all duration-300 ease-in-out cursor-pointer animate-in fade-in zoom-in-50 delay-200 duration-500 hover:scale-125 hover:-rotate-12 hover:drop-shadow-lg" />
           <h1 className="text-5xl md:text-6xl font-headline font-bold mb-6 text-foreground animate-in fade-in slide-in-from-top-10 delay-300 duration-500">
             Welcome to <span className="text-primary">AAHAR</span>
           </h1>
@@ -47,7 +47,7 @@ export default function HomePage() {
           <Button
             size="lg"
             asChild
-            className="bg-accent hover:bg-accent/90 text-accent-foreground text-lg py-3 px-8 hover:scale-105 active:scale-100 transition-transform duration-200 ease-in-out"
+            className="bg-accent hover:bg-accent/90 text-accent-foreground text-lg py-3 px-8 transition-all duration-200 ease-in-out shadow-lg hover:scale-105 hover:-translate-y-0.5 hover:shadow-xl active:scale-100 active:translate-y-0 active:brightness-90"
           >
             <Link href="/scan">
               <ScanLine className="mr-2 h-6 w-6" />
@@ -202,7 +202,7 @@ export default function HomePage() {
           <Button
             variant="outline"
             asChild
-            className="hover:scale-105 active:scale-100 transition-transform duration-200 ease-in-out border-primary/70 text-primary hover:bg-primary/10 hover:text-primary"
+            className="transition-all duration-200 ease-in-out border-primary/70 text-primary hover:bg-primary/10 hover:text-primary shadow-md hover:scale-105 hover:-translate-y-0.5 hover:shadow-lg active:scale-100 active:translate-y-0 active:brightness-90"
           >
             <Link href="/tips">
               View All Tips

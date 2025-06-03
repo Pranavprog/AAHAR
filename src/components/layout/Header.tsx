@@ -6,8 +6,8 @@ export default function Header() {
   return (
     <header className="bg-card/80 backdrop-blur-md border-b border-border/70 shadow-lg sticky top-0 z-50">
       <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-        <Link href="/" className="flex items-center gap-2.5 text-3xl font-headline font-bold text-primary hover:opacity-80 transition-opacity">
-          <Leaf size={32} className="transform group-hover:rotate-[-10deg] transition-transform duration-300"/>
+        <Link href="/" className="group flex items-center gap-2.5 text-3xl font-headline font-bold text-primary hover:opacity-80 transition-opacity">
+          <Leaf size={32} className="transform transition-all duration-300 group-hover:scale-110 group-hover:-rotate-12 group-hover:drop-shadow-md"/>
           <span>AAHAR</span>
         </Link>
         <nav className="flex items-center gap-1 sm:gap-2">

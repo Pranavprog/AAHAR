@@ -347,20 +347,20 @@ export default function ScanPageClient() {
         <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
           {!imagePreview && (
             <>
-              <Button onClick={handleCaptureImage} disabled={isLoading || hasCameraPermission !== true} className="bg-accent hover:bg-accent/90 text-accent-foreground w-full sm:w-auto text-base py-2.5 px-6">
+              <Button onClick={handleCaptureImage} disabled={isLoading || hasCameraPermission !== true} className="bg-accent hover:bg-accent/90 text-accent-foreground w-full sm:w-auto text-base py-2.5 px-6 transition-all duration-150 ease-in-out shadow-md hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:brightness-90">
                 <Camera className="mr-2 h-5 w-5" /> Capture Image
               </Button>
-              <Button onClick={() => fileInputRef.current?.click()} variant="outline" disabled={isLoading} className="w-full sm:w-auto text-base py-2.5 px-6 border-primary/70 text-primary hover:bg-primary/10">
+              <Button onClick={() => fileInputRef.current?.click()} variant="outline" disabled={isLoading} className="w-full sm:w-auto text-base py-2.5 px-6 border-primary/70 text-primary hover:bg-primary/10 transition-all duration-150 ease-in-out shadow-md hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:brightness-90">
                 <Upload className="mr-2 h-5 w-5" /> Upload Image File
               </Button>
             </>
           )}
           {imagePreview && (
             <>
-              <Button onClick={handleAnalyze} disabled={isLoading || !imageDataUri} className="bg-primary hover:bg-primary/90 w-full sm:w-auto text-base py-2.5 px-6">
+              <Button onClick={handleAnalyze} disabled={isLoading || !imageDataUri} className="bg-primary hover:bg-primary/90 w-full sm:w-auto text-base py-2.5 px-6 transition-all duration-150 ease-in-out shadow-md hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:brightness-90">
                 <Zap className="mr-2 h-5 w-5" /> Analyze Image
               </Button>
-              <Button onClick={handleRetake} variant="outline" disabled={isLoading} className="w-full sm:w-auto text-base py-2.5 px-6">
+              <Button onClick={handleRetake} variant="outline" disabled={isLoading} className="w-full sm:w-auto text-base py-2.5 px-6 transition-all duration-150 ease-in-out shadow-md hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:brightness-90">
                 Scan Another
               </Button>
             </>
@@ -444,7 +444,7 @@ export default function ScanPageClient() {
                 )}
               </CardContent>
               <CardFooter className="border-t border-border/50 pt-6">
-                  <Button variant="outline" onClick={handleRetake} className="text-base py-2.5 px-6">Scan Another Item</Button>
+                  <Button variant="outline" onClick={handleRetake} className="text-base py-2.5 px-6 transition-all duration-150 ease-in-out shadow-md hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:brightness-90">Scan Another Item</Button>
               </CardFooter>
             </Card>
           </>
