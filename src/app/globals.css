@@ -10,7 +10,7 @@
     --card: 222 47% 15%; /* Slightly Lighter Deep Blue */
     --card-foreground: 210 40% 98%;
 
-    --popover: 222 47% 13%; /* Darker Popover for contrast */
+    --popover: 220 25% 12%; /* Darker Popover for contrast - was 222 47% 13%; */
     --popover-foreground: 210 40% 98%;
 
     --primary: 190 95% 55%; /* Bright Cyan/Teal */
@@ -61,9 +61,10 @@
       radial-gradient(ellipse at top left, hsla(var(--primary) / 0.15) 0%, transparent 45%),
       radial-gradient(ellipse at bottom right, hsla(var(--accent) / 0.15) 0%, transparent 45%),
       radial-gradient(ellipse at center, hsla(var(--secondary) / 0.08) 0%, transparent 35%),
-      /* New floating designs */
       radial-gradient(ellipse 50% 70% at top right, hsla(var(--secondary) / 0.1) 0%, transparent 55%),
-      radial-gradient(circle 35% at bottom left, hsla(var(--primary) / 0.12) 0%, transparent 65%);
+      radial-gradient(circle 35% at bottom left, hsla(var(--primary) / 0.12) 0%, transparent 65%),
+      radial-gradient(ellipse 70% 40% at center left, hsla(var(--accent) / 0.08) 0%, transparent 50%),
+      radial-gradient(ellipse 30% 60% at top center, hsla(var(--secondary) / 0.09) 0%, transparent 55%);
     background-attachment: fixed;
   }
 }
