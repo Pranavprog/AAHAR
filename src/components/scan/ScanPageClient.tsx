@@ -67,119 +67,89 @@ export default function ScanPageClient() {
   const { toast } = useToast();
 
   useEffect(() => {
-    let isEffectMounted = true;
+    let isMounted = true;
 
-    const cleanupStream = () => {
+    const startCamera = async () => {
+      if (!videoRef.current) return;
+      // If stream is already active and permission is true, do nothing.
+      if (streamRef.current && streamRef.current.active && hasCameraPermission === true) {
+        return;
+      }
+
+      // Defensively clear any old stream/srcObject
+      if (videoRef.current.srcObject) videoRef.current.srcObject = null;
+      if (streamRef.current) {
+          streamRef.current.getTracks().forEach(t => t.stop());
+          streamRef.current = null;
+      }
+
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        if (!isMounted) { // Check if component is still mounted after async operation
+          stream.getTracks().forEach(track => track.stop());
+          return;
+        }
+        streamRef.current = stream;
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play(); // Explicitly play the video
+        if (isMounted) setHasCameraPermission(true);
+      } catch (err) {
+        console.error("Camera access or play error:", err);
+        if (isMounted) {
+          setHasCameraPermission(false);
+          toast({
+            variant: "destructive",
+            title: "Camera Error",
+            description: "Could not start camera. Please check permissions or try uploading a file.",
+          });
+        }
+      }
+    };
+
+    const stopCamera = () => {
       if (streamRef.current) {
         streamRef.current.getTracks().forEach(track => track.stop());
         streamRef.current = null;
       }
-      if (videoRef.current) {
+      if (videoRef.current && videoRef.current.srcObject) { // Check srcObject before nullifying
         videoRef.current.srcObject = null;
-        videoRef.current.onplaying = null;
-        videoRef.current.onerror = null;
       }
     };
 
     if (activeTab === "image-scan" && !imagePreview) {
-      if (hasCameraPermission === null) { // Attempt to initialize only if permission status is unknown or reset
-        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-          if (isEffectMounted) {
-            toast({
-              variant: 'destructive',
-              title: 'Camera Not Supported',
-              description: 'Your browser does not support camera access. Try uploading a file.',
-            });
-            setHasCameraPermission(false);
-          }
-          return cleanupStream; // Return cleanup as we can't proceed
-        }
-
-        navigator.mediaDevices.getUserMedia({ video: true })
-          .then(stream => {
-            if (!isEffectMounted) {
-              stream.getTracks().forEach(track => track.stop());
-              return;
-            }
-            streamRef.current = stream;
-            if (videoRef.current) {
-              videoRef.current.srcObject = stream;
-              
-              const playPromise = videoRef.current.play();
-              if (playPromise !== undefined) {
-                playPromise.then(() => {
-                  if (isEffectMounted) setHasCameraPermission(true);
-                }).catch(playError => {
-                  console.error("Error attempting to play video:", playError);
-                  if (isEffectMounted) {
-                    setHasCameraPermission(false);
-                    toast({ variant: 'destructive', title: 'Camera Playback Failed', description: 'Could not start video. Check permissions or if another app is using the camera.' });
-                  }
-                  cleanupStream(); // Cleanup on play error
-                });
-              }
-              // Fallback/confirmation event listeners
-              videoRef.current.onplaying = () => {
-                if (isEffectMounted && hasCameraPermission !== true) { // Only set if playPromise didn't or if it resolved but this event is more accurate
-                     setHasCameraPermission(true);
-                }
-              };
-              videoRef.current.onerror = (e) => {
-                console.error('Video element error:', e);
-                if (isEffectMounted) {
-                  setHasCameraPermission(false);
-                  toast({ variant: 'destructive', title: 'Camera Error', description: 'A problem occurred with the video stream.' });
-                }
-                cleanupStream();
-              };
-            } else { // videoRef.current is null
-              stream.getTracks().forEach(track => track.stop());
-              if(isEffectMounted) setHasCameraPermission(false);
-            }
-          })
-          .catch(err => { // getUserMedia error
-            console.error('Error accessing camera stream:', err);
-            if (isEffectMounted) {
-              setHasCameraPermission(false);
-              let description = 'Please enable camera permissions in your browser settings.';
-              if (String(err).includes('locked') || String(err).includes('in use')) {
-                description = 'Camera might be locked or used by another application.';
-              } else if (String(err).includes('Permission denied')) {
-                description = 'Camera access was denied. Please allow access in your browser settings.';
-              }
-              toast({ variant: 'destructive', title: 'Camera Access Denied or Failed', description });
-            }
-          });
+      // Attempt to start camera if:
+      // 1. Permission state is unknown (null) - initial load or after retake.
+      // 2. Permission was granted (true), but stream is not currently active.
+      // Do NOT attempt if permission was explicitly denied (false).
+      if (hasCameraPermission !== false) {
+          startCamera();
       }
-    } else { // Not on image-scan tab OR there is an image preview
-      cleanupStream();
-      if (activeTab !== "image-scan" && hasCameraPermission === true) {
-          setHasCameraPermission(null); // Reset to allow re-initialization if user switches back
-      }
+    } else {
+      stopCamera();
     }
 
-    return () => { // Main cleanup for the useEffect
-      isEffectMounted = false;
-      cleanupStream();
+    return () => {
+      isMounted = false; // Mark as unmounted
+      stopCamera(); // Cleanup on unmount or when dependencies change
     };
-  // toast is stable, hasCameraPermission is included to re-trigger effect when it's reset to null
-  }, [activeTab, imagePreview, hasCameraPermission, toast]);
+  }, [activeTab, imagePreview, hasCameraPermission]); // toast removed as it's stable
 
 
   const handleCaptureImage = () => {
     if (
       !videoRef.current ||
       !canvasRef.current ||
-      !streamRef.current || // Check if we have an active stream reference
+      !streamRef.current || 
+      !streamRef.current.active || // Ensure stream is active
       hasCameraPermission !== true ||
-      videoRef.current.videoWidth === 0 || // Ensures video metadata is loaded
-      videoRef.current.paused || // Ensure video is playing
+      videoRef.current.videoWidth === 0 || 
+      videoRef.current.paused || 
       videoRef.current.ended
     ) {
       toast({
         variant: "destructive",
         title: "Capture Failed",
-        description: "Camera is not ready, stream is not active, or permission might be denied. Ensure a live camera feed is visible.",
+        description: "Camera is not ready or stream is not active. Ensure a live feed is visible.",
       });
       return;
     }
@@ -193,12 +163,11 @@ export default function ScanPageClient() {
     const context = canvas.getContext('2d');
     if (context) {
       context.drawImage(video, 0, 0, canvas.width, canvas.height);
-      const dataUri = canvas.toDataURL('image/webp'); // Using webp for potentially smaller size
+      const dataUri = canvas.toDataURL('image/webp');
       setImageDataUri(dataUri);
-      setImagePreview(dataUri);
+      setImagePreview(dataUri); // This will trigger useEffect to stop the camera
       setAnalysisResult(null);
       setError(null);
-      // Stream is stopped by useEffect when imagePreview is set
     } else {
        toast({
         variant: "destructive",
@@ -211,16 +180,14 @@ export default function ScanPageClient() {
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      // No need to manually stop stream here, useEffect will handle it because activeTab or imagePreview will change.
-      setHasCameraPermission(false); // Explicitly set to false as we are moving away from live camera.
-
       const reader = new FileReader();
       reader.onloadend = () => {
         const dataUri = reader.result as string;
         setImageDataUri(dataUri);
-        setImagePreview(dataUri); 
+        setImagePreview(dataUri); // This will trigger useEffect to stop any active camera
         setAnalysisResult(null);
         setError(null);
+        setHasCameraPermission(false); // Explicitly set because we are using a file
       };
       reader.readAsDataURL(file);
     }
@@ -230,7 +197,6 @@ export default function ScanPageClient() {
   };
 
   const handleRetake = () => {
-    // Stream cleanup will be handled by useEffect due to state changes.
     setImagePreview(null);
     setImageDataUri(null);
     setAnalysisResult(null);
@@ -239,7 +205,9 @@ export default function ScanPageClient() {
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
-    setHasCameraPermission(null); // This is key to re-trigger camera initialization in useEffect
+    // Crucially, set hasCameraPermission to null to allow useEffect to re-attempt camera acquisition.
+    // The useEffect cleanup should have already stopped any active stream when imagePreview was set.
+    setHasCameraPermission(null); 
   };
 
 
@@ -293,11 +261,13 @@ export default function ScanPageClient() {
       
       const utterance = new SpeechSynthesisUtterance(textToSpeak);
       utterance.lang = 'en-US';
+      window.speechSynthesis.cancel(); // Cancel any previous speech
       window.speechSynthesis.speak(utterance);
     }
   };
   
   useEffect(() => {
+    // Cleanup speech synthesis on component unmount
     return () => {
       if (typeof window !== 'undefined' && window.speechSynthesis) {
         window.speechSynthesis.cancel();
@@ -378,13 +348,15 @@ export default function ScanPageClient() {
               ) : (
                 <>
                   <div className="w-full max-w-md aspect-video bg-muted/70 rounded-md overflow-hidden relative shadow-inner">
+                    {/* Video element is always rendered to attach ref and stream */}
                     <video ref={videoRef} className="w-full h-full object-cover" playsInline autoPlay muted />
-                    {hasCameraPermission === null && activeTab === "image-scan" && !imagePreview && (
+                    {/* Overlays for user feedback */}
+                    {activeTab === "image-scan" && !imagePreview && hasCameraPermission === null && (
                       <div className="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm">
                         <p className="text-muted-foreground p-4 text-center">Initializing camera... Please allow camera access if prompted.</p>
                       </div>
                     )}
-                    {hasCameraPermission === false && activeTab === "image-scan" && !imagePreview && ( 
+                    {activeTab === "image-scan" && !imagePreview && hasCameraPermission === false && ( 
                       <div className="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm">
                         <p className="text-muted-foreground p-4 text-center">Camera not available or permission denied. You can upload a file instead.</p>
                       </div>
