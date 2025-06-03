@@ -46,14 +46,15 @@ export default function ScanPageClient() {
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null); // null: undetermined, true: granted, false: denied
+  const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null); 
 
   const { toast } = useToast();
 
   useEffect(() => {
-    let activeStream: MediaStream | null = null;
+    let streamKilled = false; // Flag to prevent race conditions in cleanup
+    let currentStream: MediaStream | null = null;
 
-    const getCameraPermission = async () => {
+    const setupCamera = async () => {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         toast({
           variant: 'destructive',
@@ -63,23 +64,36 @@ export default function ScanPageClient() {
         setHasCameraPermission(false);
         return;
       }
+
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-        activeStream = stream;
+        if (streamKilled) { // If cleanup already ran, stop this new stream
+            stream.getTracks().forEach(track => track.stop());
+            return;
+        }
+        currentStream = stream;
+        
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
           videoRef.current.onloadedmetadata = () => {
-            videoRef.current?.play().catch(err => {
-              console.error("Video play failed:", err);
-              toast({
-                variant: 'destructive',
-                title: 'Camera Playback Error',
-                description: 'Could not start camera preview. Please ensure your camera is not in use by another application.',
+            // Ensure the video element is still associated with *this* stream before playing
+            if (videoRef.current && videoRef.current.srcObject === currentStream) {
+              videoRef.current.play().catch(err => {
+                console.error("Video play failed:", err);
+                toast({
+                  variant: 'destructive',
+                  title: 'Camera Playback Error',
+                  description: 'Could not start camera preview. Ensure camera is not in use or try refreshing.',
+                });
               });
-            });
+            }
           };
+          setHasCameraPermission(true);
+        } else {
+            // Video element not ready, stop the stream
+            stream.getTracks().forEach(track => track.stop());
+            setHasCameraPermission(false);
         }
-        setHasCameraPermission(true);
       } catch (err) {
         console.error('Error accessing camera:', err);
         setHasCameraPermission(false);
@@ -88,27 +102,24 @@ export default function ScanPageClient() {
           title: 'Camera Access Denied',
           description: 'Please enable camera permissions in your browser settings.',
         });
-        if (activeStream) {
-          activeStream.getTracks().forEach(track => track.stop());
-          activeStream = null;
-        }
       }
     };
 
     if (hasCameraPermission === null) {
-      getCameraPermission();
+      setupCamera();
     }
 
     return () => {
-      if (activeStream) {
-        activeStream.getTracks().forEach(track => track.stop());
+      streamKilled = true; // Signal that this effect's stream should be cleaned up
+      if (currentStream) {
+        currentStream.getTracks().forEach(track => track.stop());
       }
-      // Ensure srcObject is cleared if the videoRef is still valid and its srcObject was our activeStream
-      if (videoRef.current && videoRef.current.srcObject === activeStream) {
+      // Check if the videoRef still holds the stream this effect instance was managing
+      if (videoRef.current && videoRef.current.srcObject === currentStream) {
         videoRef.current.srcObject = null;
       }
     };
-  }, [toast, hasCameraPermission]);
+  }, [hasCameraPermission, toast]);
 
 
   const handleCaptureImage = () => {
@@ -116,7 +127,7 @@ export default function ScanPageClient() {
       toast({
         variant: "destructive",
         title: "Capture Failed",
-        description: "Camera not ready, permission denied, or stream inactive.",
+        description: "Camera not ready, permission denied, or stream inactive. Please try again.",
       });
       return;
     }
@@ -130,19 +141,17 @@ export default function ScanPageClient() {
     const context = canvas.getContext('2d');
     if (context) {
       context.drawImage(video, 0, 0, canvas.width, canvas.height);
-      const dataUri = canvas.toDataURL('image/webp'); // Use webp for potentially smaller file size
+      const dataUri = canvas.toDataURL('image/webp');
       setImageDataUri(dataUri);
       setImagePreview(dataUri);
       setAnalysisResult(null);
       setError(null);
 
-      // Stop the camera stream tracks after capturing an image
       if (videoRef.current && videoRef.current.srcObject) {
         const stream = videoRef.current.srcObject as MediaStream;
         stream.getTracks().forEach(track => track.stop());
-        // videoRef.current.srcObject = null; // Optional: clear srcObject
+        videoRef.current.srcObject = null; // Explicitly clear srcObject
       }
-
     } else {
        toast({
         variant: "destructive",
@@ -152,13 +161,19 @@ export default function ScanPageClient() {
     }
   };
 
-  const handleRetake = async () => {
+  const handleRetake = () => {
     setImagePreview(null);
     setImageDataUri(null);
     setAnalysisResult(null);
     setError(null);
     
-    // Setting hasCameraPermission to null will trigger the useEffect to re-request permission and restart the stream
+    // Explicitly stop and clear any existing stream before resetting permission state
+    if (videoRef.current && videoRef.current.srcObject) {
+        const stream = videoRef.current.srcObject as MediaStream;
+        stream.getTracks().forEach(track => track.stop());
+        videoRef.current.srcObject = null;
+    }
+    
     setHasCameraPermission(null); 
   };
 
@@ -206,7 +221,6 @@ export default function ScanPageClient() {
   };
   
   useEffect(() => {
-    // Cleanup for speech synthesis
     return () => {
       if (typeof window !== 'undefined' && window.speechSynthesis) {
         window.speechSynthesis.cancel();
@@ -242,7 +256,7 @@ export default function ScanPageClient() {
             </>
           ) : (
             <div className="w-full max-w-md aspect-video bg-muted rounded-md overflow-hidden relative">
-              <video ref={videoRef} className="w-full h-full object-cover" playsInline autoPlay muted />
+              <video ref={videoRef} className="w-full h-full object-cover" playsInline muted />
               {hasCameraPermission === null && (
                 <div className="absolute inset-0 flex items-center justify-center bg-background/70">
                   <p className="text-muted-foreground p-4 text-center">Initializing camera... Please allow camera access if prompted.</p>
