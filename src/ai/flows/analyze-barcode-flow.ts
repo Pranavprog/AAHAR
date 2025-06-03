@@ -72,16 +72,16 @@ const fetchProductInfoByBarcodeTool = ai.defineTool(
     outputSchema: AnalyzeBarcodeOutputSchema,
   },
   async (input) => {
-    const productInfo = mockProductDatabase[input.barcodeNumber];
-    if (productInfo) {
+    const productInfoFromDb = mockProductDatabase[input.barcodeNumber];
+    if (productInfoFromDb && productInfoFromDb.isFound) {
       return {
         isFound: true,
-        productName: productInfo.productName || 'N/A',
-        brand: productInfo.brand || 'N/A',
-        ingredients: productInfo.ingredients || [],
-        allergens: productInfo.allergens || [],
-        potentialConcerns: [], // AI will fill this
-        overallAssessment: '', // AI will fill this
+        productName: productInfoFromDb.productName || 'N/A',
+        brand: productInfoFromDb.brand || 'N/A',
+        ingredients: productInfoFromDb.ingredients || [],
+        allergens: productInfoFromDb.allergens || [],
+        potentialConcerns: [], 
+        overallAssessment: '', 
       };
     }
     return {
@@ -102,11 +102,11 @@ export async function analyzeBarcode(input: AnalyzeBarcodeInput): Promise<Analyz
 
 const prompt = ai.definePrompt({
   name: 'analyzeBarcodePrompt',
-  input: { schema: z.object({ productInfo: AnalyzeBarcodeOutputSchema }) }, // The input to the prompt is the output of the tool
+  input: { schema: z.object({ productInfo: AnalyzeBarcodeOutputSchema }) }, 
   output: { schema: AnalyzeBarcodeOutputSchema },
-  tools: [], // The tool is called by the flow, not the prompt directly in this setup
+  tools: [], 
   prompt: `You are an AI assistant specialized in analyzing packaged food items based on their ingredients.
-You have been provided with product information retrieved using a barcode.
+You have been provided with product information.
 
 Product Name: {{{productInfo.productName}}}
 Brand: {{{productInfo.brand}}}
@@ -120,11 +120,11 @@ Based ONLY on the ingredients list and declared allergens provided above:
     If sugar or corn syrup are among the first few ingredients, note "High Sugar Content" or "Sweetened with Corn Syrup".
     If Red 40, Yellow 5, etc., are present, note "Contains Artificial Colors".
 2.  Provide a brief 'overallAssessment' of the product from a health-conscious perspective, focusing on the ingredients.
-3.  Re-iterate the product name, brand, ingredients, and allergens from the input. Ensure 'isFound' remains as provided.
 
-If the product was not found (isFound is false), or if the ingredients list is empty or not listed, state that analysis cannot be performed.
-Do not invent information not present in the provided product details.
-Focus on objective analysis of the ingredients.
+IMPORTANT: Only output the 'potentialConcerns' and 'overallAssessment' fields. Do not re-output other fields like productName, brand, ingredients, allergens, or isFound, as those are already known.
+
+If the product was not found (isFound is false in the input), or if the ingredients list is empty or not listed, your output for 'potentialConcerns' should be empty and 'overallAssessment' should state that analysis cannot be performed.
+Do not invent information not present in the provided product details. Focus on objective analysis of the ingredients.
 `,
 });
 
@@ -135,41 +135,51 @@ const analyzeBarcodeFlow = ai.defineFlow(
     outputSchema: AnalyzeBarcodeOutputSchema,
   },
   async (flowInput) => {
-    // Step 1: Call the tool to get product information
-    const productInfo = await fetchProductInfoByBarcodeTool(flowInput);
+    const productInfoFromTool = await fetchProductInfoByBarcodeTool(flowInput);
 
-    if (!productInfo.isFound || !productInfo.ingredients || productInfo.ingredients.length === 0) {
+    if (!productInfoFromTool.isFound || !productInfoFromTool.ingredients || productInfoFromTool.ingredients.length === 0) {
       return {
-        isFound: productInfo.isFound || false,
-        productName: productInfo.productName || 'Product not found',
-        brand: productInfo.brand,
-        ingredients: productInfo.ingredients,
-        allergens: productInfo.allergens,
+        isFound: productInfoFromTool.isFound || false,
+        productName: productInfoFromTool.productName || 'Product not found',
+        brand: productInfoFromTool.brand,
+        ingredients: productInfoFromTool.ingredients,
+        allergens: productInfoFromTool.allergens,
         potentialConcerns: [],
-        overallAssessment: productInfo.overallAssessment || 'Cannot analyze product due to missing information or product not found.',
+        overallAssessment: productInfoFromTool.overallAssessment || 'Cannot analyze product due to missing information or product not found.',
       };
     }
 
-    // Step 2: Call the LLM prompt with the product information
-    const {output} = await prompt({ productInfo }); // Pass the tool's output to the prompt
+    const {output: aiAnalysisOutput} = await prompt({ productInfo: productInfoFromTool }); 
 
-    if (!output) {
+    if (!aiAnalysisOutput) {
         return {
-            isFound: productInfo.isFound,
-            productName: productInfo.productName,
-            brand: productInfo.brand,
-            ingredients: productInfo.ingredients,
-            allergens: productInfo.allergens,
-            potentialConcerns: [],
+            isFound: productInfoFromTool.isFound,
+            productName: productInfoFromTool.productName,
+            brand: productInfoFromTool.brand,
+            ingredients: productInfoFromTool.ingredients,
+            allergens: productInfoFromTool.allergens,
+            potentialConcerns: productInfoFromTool.potentialConcerns || [],
             overallAssessment: "AI analysis failed to generate a response.",
         };
     }
     
-    // Ensure the original product info is preserved and merged with AI's analysis
-    return {
-      ...productInfo, // Start with what the tool returned (name, brand, ingredients, allergens, isFound)
-      ...output, // Override with AI's analysis (potentialConcerns, overallAssessment)
-      isFound: productInfo.isFound, // Crucially ensure isFound from the tool isn't overwritten by a potentially missing one from LLM
+    // Construct the final result by prioritizing tool data for core fields,
+    // and taking AI analysis for its specialized fields.
+    const finalResult: AnalyzeBarcodeOutput = {
+      isFound: productInfoFromTool.isFound,
+      productName: productInfoFromTool.productName, 
+      brand: productInfoFromTool.brand,             
+      ingredients: productInfoFromTool.ingredients,   
+      allergens: productInfoFromTool.allergens,     
+      
+      potentialConcerns: (aiAnalysisOutput.potentialConcerns && aiAnalysisOutput.potentialConcerns.length > 0)
+                          ? aiAnalysisOutput.potentialConcerns
+                          : (productInfoFromTool.potentialConcerns || []),
+      overallAssessment: aiAnalysisOutput.overallAssessment 
+                          ? aiAnalysisOutput.overallAssessment 
+                          : (productInfoFromTool.overallAssessment || "AI could not provide an overall assessment."),
     };
+    return finalResult;
   }
 );
+
