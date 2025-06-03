@@ -83,9 +83,9 @@ export default function HomePage() {
                 </CardContent>
               </Card>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[525px]">
+            <DialogContent className="sm:max-w-[525px] bg-popover">
               <DialogHeader>
-                <DialogTitle className="font-headline text-primary flex items-center gap-2">
+                <DialogTitle className="font-headline text-lg bg-accent text-accent-foreground px-3 py-2 rounded-md mb-4 flex items-center gap-2 shadow-md">
                   <ScanLine className="h-6 w-6" /> Scanning Your Item: A Quick Guide
                 </DialogTitle>
                 <DialogDescription className="text-left pt-2">
@@ -125,9 +125,9 @@ export default function HomePage() {
                 </CardContent>
               </Card>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[525px]">
+            <DialogContent className="sm:max-w-[525px] bg-popover">
               <DialogHeader>
-                <DialogTitle className="font-headline text-primary flex items-center gap-2">
+                <DialogTitle className="font-headline text-lg bg-accent text-accent-foreground px-3 py-2 rounded-md mb-4 flex items-center gap-2 shadow-md">
                   <Layers className="h-6 w-6" /> Understanding AI Analysis
                 </DialogTitle>
                 <DialogDescription className="text-left pt-2">
@@ -167,9 +167,9 @@ export default function HomePage() {
                 </CardContent>
               </Card>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[525px]">
+            <DialogContent className="sm:max-w-[525px] bg-popover">
               <DialogHeader>
-                <DialogTitle className="font-headline text-primary flex items-center gap-2">
+                <DialogTitle className="font-headline text-lg bg-accent text-accent-foreground px-3 py-2 rounded-md mb-4 flex items-center gap-2 shadow-md">
                   <Lightbulb className="h-6 w-6" /> Interpreting Your Results
                 </DialogTitle>
                 <DialogDescription className="text-left pt-2">
