@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { analyzeFoodItem, type AnalyzeFoodItemOutput } from "@/ai/flows/analyze-food-item";
-import { Camera, AlertTriangle, CheckCircle2, XCircle, ShieldAlert, ShieldCheck, ShieldX, Mic, Percent, Droplets, Waves, Leaf, Package, Microscope, Info, Zap } from "lucide-react";
+import { Camera, AlertTriangle, CheckCircle2, XCircle, ShieldAlert, ShieldCheck, ShieldX, Mic, Percent, Droplets, Waves, Leaf, Package, Microscope, Info, Zap, Upload } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const EdibilityBadge: React.FC<{ status: AnalyzeFoodItemOutput["edibility"] }> = ({ status }) => {
@@ -46,12 +46,13 @@ export default function ScanPageClient() {
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null); 
 
   const { toast } = useToast();
 
   useEffect(() => {
-    let streamKilled = false; // Flag to prevent race conditions in cleanup
+    let streamKilled = false; 
     let currentStream: MediaStream | null = null;
 
     const setupCamera = async () => {
@@ -67,7 +68,7 @@ export default function ScanPageClient() {
 
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-        if (streamKilled) { // If cleanup already ran, stop this new stream
+        if (streamKilled) { 
             stream.getTracks().forEach(track => track.stop());
             return;
         }
@@ -76,7 +77,6 @@ export default function ScanPageClient() {
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
           videoRef.current.onloadedmetadata = () => {
-            // Ensure the video element is still associated with *this* stream before playing
             if (videoRef.current && videoRef.current.srcObject === currentStream) {
               videoRef.current.play().catch(err => {
                 console.error("Video play failed:", err);
@@ -90,7 +90,6 @@ export default function ScanPageClient() {
           };
           setHasCameraPermission(true);
         } else {
-            // Video element not ready, stop the stream
             stream.getTracks().forEach(track => track.stop());
             setHasCameraPermission(false);
         }
@@ -105,21 +104,20 @@ export default function ScanPageClient() {
       }
     };
 
-    if (hasCameraPermission === null) {
+    if (hasCameraPermission === null && !imagePreview) { // Only setup camera if no image is already previewed
       setupCamera();
     }
 
     return () => {
-      streamKilled = true; // Signal that this effect's stream should be cleaned up
+      streamKilled = true; 
       if (currentStream) {
         currentStream.getTracks().forEach(track => track.stop());
       }
-      // Check if the videoRef still holds the stream this effect instance was managing
       if (videoRef.current && videoRef.current.srcObject === currentStream) {
         videoRef.current.srcObject = null;
       }
     };
-  }, [hasCameraPermission, toast]);
+  }, [hasCameraPermission, toast, imagePreview]); // Added imagePreview to dependency array
 
 
   const handleCaptureImage = () => {
@@ -150,8 +148,9 @@ export default function ScanPageClient() {
       if (videoRef.current && videoRef.current.srcObject) {
         const stream = videoRef.current.srcObject as MediaStream;
         stream.getTracks().forEach(track => track.stop());
-        videoRef.current.srcObject = null; // Explicitly clear srcObject
+        videoRef.current.srcObject = null; 
       }
+      setHasCameraPermission(false); // Indicate camera is no longer active for preview
     } else {
        toast({
         variant: "destructive",
@@ -161,20 +160,49 @@ export default function ScanPageClient() {
     }
   };
 
+  const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const dataUri = reader.result as string;
+        setImageDataUri(dataUri);
+        setImagePreview(dataUri);
+        
+        if (videoRef.current && videoRef.current.srcObject) {
+          const stream = videoRef.current.srcObject as MediaStream;
+          stream.getTracks().forEach(track => track.stop());
+          videoRef.current.srcObject = null;
+        }
+        setHasCameraPermission(false); // To hide camera view after file upload
+        
+        setAnalysisResult(null);
+        setError(null);
+      };
+      reader.readAsDataURL(file);
+    }
+    if (event.target) {
+      event.target.value = ''; // Reset file input
+    }
+  };
+
   const handleRetake = () => {
     setImagePreview(null);
     setImageDataUri(null);
     setAnalysisResult(null);
     setError(null);
     
-    // Explicitly stop and clear any existing stream before resetting permission state
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+    
     if (videoRef.current && videoRef.current.srcObject) {
         const stream = videoRef.current.srcObject as MediaStream;
         stream.getTracks().forEach(track => track.stop());
         videoRef.current.srcObject = null;
     }
     
-    setHasCameraPermission(null); 
+    setHasCameraPermission(null); // This will re-trigger camera setup via useEffect
   };
 
 
@@ -182,8 +210,8 @@ export default function ScanPageClient() {
     if (!imageDataUri) {
       toast({
         variant: "destructive",
-        title: "No Image Captured",
-        description: "Please capture an image first.",
+        title: "No Image",
+        description: "Please capture or upload an image first.",
       });
       return;
     }
@@ -233,19 +261,20 @@ export default function ScanPageClient() {
     <Card className="w-full shadow-xl">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 font-headline">
-          <Camera className="text-primary" /> Use Camera to Scan Item
+          <Camera className="text-primary" /> Scan Item
         </CardTitle>
         <CardDescription>
-          Position the food item in front of your camera, capture an image, and AAHAR will analyze it.
+          Use your camera or upload an image file of the food item for AAHAR to analyze.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         <canvas ref={canvasRef} style={{ display: 'none' }} />
+        <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden" />
 
         <div className="border border-dashed border-border rounded-lg p-4 flex flex-col items-center space-y-4 min-h-[300px] justify-center">
           {imagePreview ? (
             <>
-              <p className="text-sm text-muted-foreground">Captured Image Preview:</p>
+              <p className="text-sm text-muted-foreground">Image Preview:</p>
               <Image
                 src={imagePreview}
                 alt="Food item preview"
@@ -255,40 +284,52 @@ export default function ScanPageClient() {
               />
             </>
           ) : (
-            <div className="w-full max-w-md aspect-video bg-muted rounded-md overflow-hidden relative">
-              <video ref={videoRef} className="w-full h-full object-cover" playsInline muted />
-              {hasCameraPermission === null && (
-                <div className="absolute inset-0 flex items-center justify-center bg-background/70">
-                  <p className="text-muted-foreground p-4 text-center">Initializing camera... Please allow camera access if prompted.</p>
-                </div>
-              )}
-            </div>
+            <>
+              <div className="w-full max-w-md aspect-video bg-muted rounded-md overflow-hidden relative">
+                <video ref={videoRef} className="w-full h-full object-cover" playsInline muted />
+                {hasCameraPermission === null && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-background/70">
+                    <p className="text-muted-foreground p-4 text-center">Initializing camera... Please allow camera access if prompted.</p>
+                  </div>
+                )}
+                 {hasCameraPermission === false && ( // Show only if camera specifically denied/failed and no image uploaded
+                  <div className="absolute inset-0 flex items-center justify-center bg-background/80">
+                    <p className="text-muted-foreground p-4 text-center">Camera not available or permission denied. You can upload a file instead.</p>
+                  </div>
+                )}
+              </div>
+             
+            </>
           )}
-
-          {hasCameraPermission === false && !imagePreview && (
+           {hasCameraPermission === false && !imagePreview && ( // This alert might be redundant if the above message is shown in video area.
             <Alert variant="destructive" className="w-full">
               <AlertTriangle className="h-4 w-4" />
-              <AlertTitle>Camera Access Required</AlertTitle>
+              <AlertTitle>Camera Access Denied or Unavailable</AlertTitle>
               <AlertDescription>
-                AAHAR needs access to your camera to scan items. Please enable camera permissions in your browser settings and refresh the page if necessary.
+                AAHAR needs access to your camera to scan items. Please enable camera permissions in your browser settings or upload an image file.
               </AlertDescription>
             </Alert>
           )}
         </div>
 
         <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
-          {!imagePreview && hasCameraPermission === true && (
-            <Button onClick={handleCaptureImage} disabled={isLoading} className="bg-accent hover:bg-accent/90 text-accent-foreground w-full sm:w-auto">
-              <Camera className="mr-2 h-5 w-5" /> Capture Image
-            </Button>
+          {!imagePreview && (
+            <>
+              <Button onClick={handleCaptureImage} disabled={isLoading || hasCameraPermission !== true} className="bg-accent hover:bg-accent/90 text-accent-foreground w-full sm:w-auto">
+                <Camera className="mr-2 h-5 w-5" /> Capture Image
+              </Button>
+              <Button onClick={() => fileInputRef.current?.click()} variant="outline" disabled={isLoading} className="w-full sm:w-auto">
+                <Upload className="mr-2 h-5 w-5" /> Upload Image File
+              </Button>
+            </>
           )}
           {imagePreview && (
             <>
               <Button onClick={handleAnalyze} disabled={isLoading || !imageDataUri} className="bg-primary hover:bg-primary/90 w-full sm:w-auto">
-                <Zap className="mr-2 h-5 w-5" /> Analyze Captured Image
+                <Zap className="mr-2 h-5 w-5" /> Analyze Image
               </Button>
               <Button onClick={handleRetake} variant="outline" disabled={isLoading} className="w-full sm:w-auto">
-                Retake Photo
+                Scan Another (Retake/New File)
               </Button>
             </>
           )}
