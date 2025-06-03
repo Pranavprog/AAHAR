@@ -101,7 +101,7 @@ const analyzeFoodItemFlow = ai.defineFlow(
         // This case should ideally be handled by Genkit if output schema isn't met,
         // but as a safeguard:
         console.warn('AI prompt returned no output, falling back to simulation for unexpected reason.');
-        return await simulateResultsTool.fn({ itemType: 'Food Item (No Output)' });
+        return await simulateResultsTool({ itemType: 'Food Item (No Output)' });
       }
       return output;
     } catch (error) {
@@ -109,8 +109,7 @@ const analyzeFoodItemFlow = ai.defineFlow(
       console.warn('Falling back to simulated results due to an error during AI analysis.');
       // Directly call the tool's underlying function as a fallback.
       // Provide a generic itemType since the analysis failed.
-      return await simulateResultsTool.fn({ itemType: 'Food Item (Analysis Error)' });
+      return await simulateResultsTool({ itemType: 'Food Item (Analysis Error)' });
     }
   }
 );
-
