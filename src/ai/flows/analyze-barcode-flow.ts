@@ -58,9 +58,11 @@ const mockProductDatabase: Record<string, Partial<AnalyzeBarcodeOutput>> = {
     ingredients: ['Carbonated Water', 'Caramel Color', 'Aspartame', 'Phosphoric Acid', 'Potassium Benzoate (Preservative)', 'Natural Flavors', 'Caffeine'],
     allergens: [],
   },
-   '000000000000': { // This entry is effectively for testing "not found" by the tool itself
-    isFound: false, // The tool will override this based on lookup
+   '000000000000': {
+    isFound: false,
     productName: 'Unknown Product - DB Entry',
+    ingredients: [],
+    allergens: [],
   }
 };
 
@@ -69,30 +71,31 @@ const fetchProductInfoByBarcodeTool = ai.defineTool(
     name: 'fetchProductInfoByBarcode',
     description: 'Fetches product information (name, brand, ingredients, allergens) for a given barcode number. This is a simulated tool.',
     inputSchema: z.object({ barcodeNumber: z.string() }),
-    outputSchema: AnalyzeBarcodeOutputSchema,
+    outputSchema: AnalyzeBarcodeOutputSchema, // Ensures the tool's output matches the flow's expectations
   },
-  async (input) => {
+  async (input): Promise<AnalyzeBarcodeOutput> => { // Explicitly type the promise
     const productInfoFromDb = mockProductDatabase[input.barcodeNumber];
-    if (productInfoFromDb && productInfoFromDb.isFound) { // Check isFound from the DB entry
+
+    if (productInfoFromDb && productInfoFromDb.isFound === true) {
       return {
-        isFound: true, // Explicitly true as it's found in our mock
+        isFound: true,
         productName: productInfoFromDb.productName || 'N/A',
         brand: productInfoFromDb.brand || 'N/A',
         ingredients: productInfoFromDb.ingredients || [],
         allergens: productInfoFromDb.allergens || [],
-        potentialConcerns: [],
-        overallAssessment: '',
+        potentialConcerns: [], // Initialize as empty; AI will fill this
+        overallAssessment: '',   // Initialize as empty; AI will fill this
       };
     }
-    // Product not found in our mockProductDatabase
+    // Product not found in our mockProductDatabase or isFound is false
     return {
       isFound: false,
-      productName: 'Product not found',
-      brand: '',
-      ingredients: [],
-      allergens: [],
+      productName: productInfoFromDb?.productName || 'Product not found',
+      brand: productInfoFromDb?.brand || '',
+      ingredients: productInfoFromDb?.ingredients || [],
+      allergens: productInfoFromDb?.allergens || [],
       potentialConcerns: [],
-      overallAssessment: 'Could not retrieve information for this barcode.',
+      overallAssessment: 'Could not retrieve information for this barcode or product is marked as not found in database.',
     };
   }
 );
@@ -104,7 +107,7 @@ export async function analyzeBarcode(input: AnalyzeBarcodeInput): Promise<Analyz
 const prompt = ai.definePrompt({
   name: 'analyzeBarcodePrompt',
   input: { schema: z.object({ productInfo: AnalyzeBarcodeOutputSchema }) },
-  output: { schema: AnalyzeBarcodeOutputSchema }, // AI should output based on this schema
+  output: { schema: AnalyzeBarcodeOutputSchema }, 
   tools: [],
   prompt: `You are an AI assistant specialized in analyzing packaged food items based on their ingredients.
 You have been provided with product information.
@@ -135,55 +138,57 @@ const analyzeBarcodeFlow = ai.defineFlow(
     inputSchema: AnalyzeBarcodeInputSchema,
     outputSchema: AnalyzeBarcodeOutputSchema,
   },
-  async (flowInput) => {
+  async (flowInput): Promise<AnalyzeBarcodeOutput> => {
     const productInfoFromTool = await fetchProductInfoByBarcodeTool(flowInput);
 
-    // If the tool itself says product not found, or if ingredients are missing (even if found),
+    // If the tool says product not found, or if ingredients are missing (even if found),
     // return the tool's assessment without calling the AI.
     if (!productInfoFromTool.isFound || !productInfoFromTool.ingredients || productInfoFromTool.ingredients.length === 0) {
       return {
-        isFound: productInfoFromTool.isFound || false,
-        productName: productInfoFromTool.productName || 'Product not found',
-        brand: productInfoFromTool.brand || '',
-        ingredients: productInfoFromTool.ingredients || [],
-        allergens: productInfoFromTool.allergens || [],
+        isFound: productInfoFromTool.isFound, // This could be false if not found, or true if found but no ingredients
+        productName: productInfoFromTool.productName,
+        brand: productInfoFromTool.brand,
+        ingredients: productInfoFromTool.ingredients,
+        allergens: productInfoFromTool.allergens,
         potentialConcerns: [], // No AI analysis performed
         overallAssessment: productInfoFromTool.overallAssessment || 'Cannot analyze product due to missing information or product not found.',
       };
     }
 
-    // At this point, productInfoFromTool contains valid base data for an existing product.
-    // Initialize the result with all data from the tool.
+    // Initialize the result with all data from the tool. This is the base truth.
     const finalResult: AnalyzeBarcodeOutput = {
-      isFound: productInfoFromTool.isFound,
+      isFound: productInfoFromTool.isFound, // Should be true here
       productName: productInfoFromTool.productName,
       brand: productInfoFromTool.brand,
       ingredients: productInfoFromTool.ingredients,
       allergens: productInfoFromTool.allergens,
-      potentialConcerns: productInfoFromTool.potentialConcerns || [], // Should be [] from tool
-      overallAssessment: productInfoFromTool.overallAssessment || '',   // Should be '' from tool
+      potentialConcerns: productInfoFromTool.potentialConcerns, // Should be [] from tool
+      overallAssessment: productInfoFromTool.overallAssessment,   // Should be '' from tool
     };
 
     try {
+      // Call the AI to get potentialConcerns and overallAssessment
       const {output: aiAnalysisOutput} = await prompt({ productInfo: productInfoFromTool });
 
       if (aiAnalysisOutput) {
-        // Only update fields the AI is responsible for.
-        if (aiAnalysisOutput.potentialConcerns && aiAnalysisOutput.potentialConcerns.length > 0) {
+        // Only update fields the AI is responsible for and if they exist in AI output.
+        if (aiAnalysisOutput.potentialConcerns !== undefined) {
           finalResult.potentialConcerns = aiAnalysisOutput.potentialConcerns;
         }
-        if (aiAnalysisOutput.overallAssessment) {
+        if (aiAnalysisOutput.overallAssessment !== undefined) {
           finalResult.overallAssessment = aiAnalysisOutput.overallAssessment;
         }
-        // The AI might also (incorrectly, despite instructions) set 'isFound'. We ensure the tool's 'isFound' takes precedence.
-        finalResult.isFound = productInfoFromTool.isFound;
+        // Ensure tool's isFound is preserved, AI shouldn't change this.
+        finalResult.isFound = productInfoFromTool.isFound; 
       } else {
-        // AI analysis failed or returned no output
-        finalResult.overallAssessment = "AI analysis failed to generate a response for concerns and assessment.";
+        // AI analysis failed or returned no structured output for concerns/assessment
+        // Keep base product info, update assessment.
+        finalResult.overallAssessment = "AI analysis did not provide specific concerns or assessment. Please review ingredients manually.";
       }
     } catch (e) {
         console.error("Error during AI prompt call for barcode analysis:", e);
-        finalResult.overallAssessment = "An error occurred during AI analysis of ingredients.";
+        // Keep base product info, update assessment.
+        finalResult.overallAssessment = "An error occurred during AI analysis of ingredients. Please review ingredients manually.";
     }
 
     return finalResult;
