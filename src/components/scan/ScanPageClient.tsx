@@ -12,6 +12,7 @@ import { Camera, AlertTriangle, CheckCircle2, XCircle, ShieldAlert, ShieldCheck,
 import { useToast } from "@/hooks/use-toast";
 
 const EdibilityBadge: React.FC<{ status: AnalyzeFoodItemOutput["edibility"] }> = ({ status }) => {
+  if (!status) return null;
   let badgeClasses = "inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-semibold shadow-md ";
   let IconComponent = ShieldCheck;
 
@@ -68,12 +69,9 @@ export default function ScanPageClient() {
     }
 
     if (hasCameraPermission !== null) {
-      // If permission status is already determined (true or false), don't re-initialize
       return;
     }
 
-    // At this point: !imagePreview && hasCameraPermission === null
-    // Attempt to initialize the camera.
     let isEffectMounted = true;
 
     const getCameraStream = async () => {
@@ -99,21 +97,20 @@ export default function ScanPageClient() {
         streamRef.current = stream;
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
-          // autoPlay on the video element should handle playing.
-          // Consider adding listeners for 'playing' or 'error' on videoRef.current for more robustness if autoPlay is unreliable.
-          setHasCameraPermission(true);
+          await videoRef.current.play(); // Wait for play to succeed
+          if(isEffectMounted) setHasCameraPermission(true);
         } else {
-          stream.getTracks().forEach(track => track.stop()); // videoRef not ready
+          stream.getTracks().forEach(track => track.stop()); 
           if (isEffectMounted) setHasCameraPermission(false);
         }
       } catch (err) {
-        console.error('Error accessing camera:', err);
+        console.error('Error accessing or playing camera stream:', err);
         if (isEffectMounted) {
           setHasCameraPermission(false);
           toast({
             variant: 'destructive',
-            title: 'Camera Access Denied',
-            description: 'Please enable camera permissions in your browser settings. You can also upload a file.',
+            title: 'Camera Access Denied or Failed',
+            description: 'Please enable camera permissions or check if another app is using the camera. You can also upload a file.',
           });
         }
       }
@@ -131,7 +128,7 @@ export default function ScanPageClient() {
         videoRef.current.srcObject = null;
       }
     };
-  }, [imagePreview, hasCameraPermission]);
+  }, [imagePreview, hasCameraPermission, toast]);
 
 
   const handleCaptureImage = () => {
@@ -147,7 +144,7 @@ export default function ScanPageClient() {
       toast({
         variant: "destructive",
         title: "Capture Failed",
-        description: "Camera is not ready, permission might be denied, or the video stream is not active/playable. Please ensure a live camera feed is visible.",
+        description: "Camera is not ready, permission might be denied, or the video stream is not active/playable. Please ensure a live camera feed is visible and permissions are granted.",
       });
       return;
     }
@@ -166,8 +163,6 @@ export default function ScanPageClient() {
       setImagePreview(dataUri);
       setAnalysisResult(null);
       setError(null);
-
-      // Stream will be stopped by the useEffect when imagePreview updates
     } else {
        toast({
         variant: "destructive",
@@ -187,7 +182,7 @@ export default function ScanPageClient() {
       if (videoRef.current) {
         videoRef.current.srcObject = null;
       }
-      setHasCameraPermission(false); // Explicitly set to false as we are using file upload
+      setHasCameraPermission(false); 
 
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -221,7 +216,7 @@ export default function ScanPageClient() {
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
-    setHasCameraPermission(null);  // Reset to null to trigger camera re-initialization
+    setHasCameraPermission(null);
   };
 
 
@@ -242,7 +237,9 @@ export default function ScanPageClient() {
     try {
       const result = await analyzeFoodItem({ photoDataUri: imageDataUri });
       setAnalysisResult(result);
-      speakResults(result);
+      if (result.identification.isFoodItem) {
+        speakResults(result);
+      }
     } catch (err) {
       console.error("Analysis error:", err);
       const errorMessage = err instanceof Error ? err.message : "An unknown error occurred during analysis.";
@@ -258,12 +255,18 @@ export default function ScanPageClient() {
   };
 
   const speakResults = (result: AnalyzeFoodItemOutput | null) => {
-    if (result && typeof window !== 'undefined' && window.speechSynthesis) {
-      let textToSpeak = `Scanned item: ${result.identification.name}. Edibility: ${result.edibility}. `;
+    if (result && result.identification.isFoodItem && typeof window !== 'undefined' && window.speechSynthesis) {
+      let textToSpeak = `Scanned item: ${result.identification.name || 'Unknown food'}. `;
+      if (result.edibility) {
+        textToSpeak += `Edibility: ${result.edibility}. `;
+      }
       if (result.identification.dominantColors && result.identification.dominantColors.length > 0) {
         textToSpeak += `Dominant colors observed: ${result.identification.dominantColors.join(', ')}. `;
       }
-      textToSpeak += `Water content: ${result.components.waterPercentage} percent. Sugar content: ${result.components.sugarPercentage} percent.`;
+      if (result.components) {
+         if (result.components.waterPercentage !== undefined) textToSpeak += `Water content: ${result.components.waterPercentage} percent. `;
+         if (result.components.sugarPercentage !== undefined) textToSpeak += `Sugar content: ${result.components.sugarPercentage} percent. `;
+      }
       
       const utterance = new SpeechSynthesisUtterance(textToSpeak);
       utterance.lang = 'en-US';
@@ -315,7 +318,7 @@ export default function ScanPageClient() {
                     <p className="text-muted-foreground p-4 text-center">Initializing camera... Please allow camera access if prompted.</p>
                   </div>
                 )}
-                 {hasCameraPermission === false && ( 
+                 {hasCameraPermission === false && !imagePreview && ( 
                   <div className="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm">
                     <p className="text-muted-foreground p-4 text-center">Camera not available or permission denied. You can upload a file instead.</p>
                   </div>
@@ -374,66 +377,92 @@ export default function ScanPageClient() {
                 The information provided by AAHAR is generated by an AI model. While we aim for accuracy, this analysis is for informational purposes only and may not be 100% complete or precise. It should not be used as a substitute for professional medical, nutritional, or food safety advice. Always consult with a qualified expert for critical decisions regarding your health and food consumption.
               </AlertDescription>
             </Alert>
-            <Card className="bg-card/70 backdrop-blur-sm shadow-xl border border-accent/60 shadow-[0_0_15px_3px_hsl(var(--accent)/0.3),0_0_25px_7px_hsl(var(--accent)/0.15)]">
-              <CardHeader className="border-b border-border/50 pb-4">
-                <div className="flex justify-between items-center">
-                  <CardTitle className="font-headline text-2xl md:text-3xl text-primary flex items-center gap-3">
-                    <Package size={30} /> {analysisResult.identification.name}
-                  </CardTitle>
-                  <Button variant="ghost" size="icon" onClick={() => speakResults(analysisResult)} title="Read results aloud" className="text-foreground/70 hover:text-primary hover:bg-primary/10">
-                    <Mic className="h-6 w-6" />
-                  </Button>
-                </div>
-                <CardDescription className="pt-2">
-                  <EdibilityBadge status={analysisResult.edibility} />
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6 p-6">
-                <div>
-                  <h3 className="text-xl font-semibold flex items-center gap-2.5 mb-2 text-foreground/90"><Microscope size={22} className="text-accent"/>Identification</h3>
-                  <p className="text-muted-foreground">Type: <span className="font-medium text-foreground/80">{analysisResult.identification.itemType}</span></p>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="text-muted-foreground">Confidence:</span>
-                    <Progress value={analysisResult.identification.confidence * 100} className="w-1/2 h-2.5 bg-muted/50 [&>div]:bg-primary" /> 
-                    <span className="font-medium text-foreground/80">{(analysisResult.identification.confidence * 100).toFixed(0)}%</span>
-                  </div>
-                   {analysisResult.identification.dominantColors && analysisResult.identification.dominantColors.length > 0 && (
-                    <div className="mt-2">
-                      <h4 className="text-sm font-medium flex items-center gap-2 text-foreground/80"><Palette size={16} className="text-accent/80"/>Dominant Colors:</h4>
-                      <p className="text-xs text-muted-foreground capitalize">{analysisResult.identification.dominantColors.join(', ')}</p>
+            
+            {analysisResult.identification.isFoodItem === false ? (
+                <Card className="bg-card/70 backdrop-blur-sm shadow-xl border border-yellow-500/60 shadow-[0_0_15px_3px_hsl(var(--accent)/0.3),0_0_25px_7px_hsl(var(--accent)/0.15)]">
+                    <CardHeader className="border-b border-border/50 pb-4">
+                        <CardTitle className="font-headline text-2xl md:text-3xl text-yellow-300 flex items-center gap-3">
+                            <AlertTriangle size={30} /> Item Not Identified as Food
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-6">
+                        <p className="text-muted-foreground text-lg">
+                            {analysisResult.identification.name || "The scanned item does not appear to be a food product."}
+                        </p>
+                         <p className="text-sm text-muted-foreground mt-2">AAHAR is designed for food analysis. Please scan a food item.</p>
+                    </CardContent>
+                    <CardFooter className="border-t border-border/50 pt-6">
+                        <Button variant="outline" onClick={handleRetake} className="text-base py-2.5 px-6 transition-all duration-150 ease-in-out shadow-md hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:brightness-90">Scan Another Item</Button>
+                    </CardFooter>
+                </Card>
+            ) : (
+                <Card className="bg-card/70 backdrop-blur-sm shadow-xl border border-accent/60 shadow-[0_0_15px_3px_hsl(var(--accent)/0.3),0_0_25px_7px_hsl(var(--accent)/0.15)]">
+                <CardHeader className="border-b border-border/50 pb-4">
+                    <div className="flex justify-between items-center">
+                    <CardTitle className="font-headline text-2xl md:text-3xl text-primary flex items-center gap-3">
+                        <Package size={30} /> {analysisResult.identification.name || "Food Item"}
+                    </CardTitle>
+                    <Button variant="ghost" size="icon" onClick={() => speakResults(analysisResult)} title="Read results aloud" className="text-foreground/70 hover:text-primary hover:bg-primary/10">
+                        <Mic className="h-6 w-6" />
+                    </Button>
                     </div>
-                  )}
-                </div>
-                
-                <div className="border-t border-border/50 pt-4">
-                  <h3 className="text-xl font-semibold flex items-center gap-2.5 mb-2 text-foreground/90"><Percent size={22} className="text-accent"/>Key Components</h3>
-                  <ul className="space-y-1.5 text-muted-foreground">
-                    <li className="flex items-center gap-2"><Droplets size={18} className="text-blue-400" />Water: <span className="font-medium text-foreground/80">{analysisResult.components.waterPercentage}%</span></li>
-                    <li className="flex items-center gap-2"><Waves size={18} className="text-orange-400" />Sugar: <span className="font-medium text-foreground/80">{analysisResult.components.sugarPercentage}%</span></li>
-                    <li className="flex items-center gap-2"><Leaf size={18} className="text-green-400" />Fiber: <span className="font-medium text-foreground/80">{analysisResult.components.fiberPercentage}%</span></li>
-                  </ul>
-                </div>
-
-                <div className="border-t border-border/50 pt-4">
-                  <h3 className="text-xl font-semibold flex items-center gap-2.5 mb-2 text-foreground/90"><Info size={22} className="text-accent"/>Vitamins & Minerals</h3>
-                  <p className="text-sm text-muted-foreground">{analysisResult.components.vitaminsAndMinerals || "Not specified"}</p>
-                </div>
-
-                {analysisResult.chemicalResidues && analysisResult.chemicalResidues.length > 0 && (
-                  <div className="border-t border-border/50 pt-4">
-                    <h3 className="text-xl font-semibold text-red-400 flex items-center gap-2.5 mb-2"><AlertTriangle size={22} />Potential Chemical Residues</h3>
-                    <ul className="list-disc list-inside ml-1 space-y-1 text-sm text-red-300/90 bg-red-500/10 p-3 rounded-md border border-red-500/30">
-                      {analysisResult.chemicalResidues.map((residue, index) => (
-                        <li key={index}>{residue}</li>
-                      ))}
+                    <CardDescription className="pt-2">
+                        <EdibilityBadge status={analysisResult.edibility} />
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6 p-6">
+                    <div>
+                    <h3 className="text-xl font-semibold flex items-center gap-2.5 mb-2 text-foreground/90"><Microscope size={22} className="text-accent"/>Identification</h3>
+                    <p className="text-muted-foreground">Type: <span className="font-medium text-foreground/80">{analysisResult.identification.itemType || "N/A"}</span></p>
+                    {analysisResult.identification.confidence !== undefined && (
+                        <div className="flex items-center gap-2 mt-1">
+                        <span className="text-muted-foreground">Confidence:</span>
+                        <Progress value={analysisResult.identification.confidence * 100} className="w-1/2 h-2.5 bg-muted/50 [&>div]:bg-primary" /> 
+                        <span className="font-medium text-foreground/80">{(analysisResult.identification.confidence * 100).toFixed(0)}%</span>
+                        </div>
+                    )}
+                    {analysisResult.identification.dominantColors && analysisResult.identification.dominantColors.length > 0 && (
+                        <div className="mt-2">
+                        <h4 className="text-sm font-medium flex items-center gap-2 text-foreground/80"><Palette size={16} className="text-accent/80"/>Dominant Colors:</h4>
+                        <p className="text-xs text-muted-foreground capitalize">{analysisResult.identification.dominantColors.join(', ')}</p>
+                        </div>
+                    )}
+                    </div>
+                    
+                    {analysisResult.components && (
+                    <div className="border-t border-border/50 pt-4">
+                    <h3 className="text-xl font-semibold flex items-center gap-2.5 mb-2 text-foreground/90"><Percent size={22} className="text-accent"/>Key Components</h3>
+                    <ul className="space-y-1.5 text-muted-foreground">
+                        {analysisResult.components.waterPercentage !== undefined && <li className="flex items-center gap-2"><Droplets size={18} className="text-blue-400" />Water: <span className="font-medium text-foreground/80">{analysisResult.components.waterPercentage}%</span></li>}
+                        {analysisResult.components.sugarPercentage !== undefined && <li className="flex items-center gap-2"><Waves size={18} className="text-orange-400" />Sugar: <span className="font-medium text-foreground/80">{analysisResult.components.sugarPercentage}%</span></li>}
+                        {analysisResult.components.fiberPercentage !== undefined && <li className="flex items-center gap-2"><Leaf size={18} className="text-green-400" />Fiber: <span className="font-medium text-foreground/80">{analysisResult.components.fiberPercentage}%</span></li>}
                     </ul>
-                  </div>
-                )}
-              </CardContent>
-              <CardFooter className="border-t border-border/50 pt-6">
-                  <Button variant="outline" onClick={handleRetake} className="text-base py-2.5 px-6 transition-all duration-150 ease-in-out shadow-md hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:brightness-90">Scan Another Item</Button>
-              </CardFooter>
-            </Card>
+                    </div>
+                    )}
+
+                    {analysisResult.components?.vitaminsAndMinerals && (
+                    <div className="border-t border-border/50 pt-4">
+                    <h3 className="text-xl font-semibold flex items-center gap-2.5 mb-2 text-foreground/90"><Info size={22} className="text-accent"/>Vitamins & Minerals</h3>
+                    <p className="text-sm text-muted-foreground">{analysisResult.components.vitaminsAndMinerals}</p>
+                    </div>
+                    )}
+
+                    {analysisResult.chemicalResidues && analysisResult.chemicalResidues.length > 0 && (
+                    <div className="border-t border-border/50 pt-4">
+                        <h3 className="text-xl font-semibold text-red-400 flex items-center gap-2.5 mb-2"><AlertTriangle size={22} />Potential Chemical Residues</h3>
+                        <ul className="list-disc list-inside ml-1 space-y-1 text-sm text-red-300/90 bg-red-500/10 p-3 rounded-md border border-red-500/30">
+                        {analysisResult.chemicalResidues.map((residue, index) => (
+                            <li key={index}>{residue}</li>
+                        ))}
+                        </ul>
+                    </div>
+                    )}
+                </CardContent>
+                <CardFooter className="border-t border-border/50 pt-6">
+                    <Button variant="outline" onClick={handleRetake} className="text-base py-2.5 px-6 transition-all duration-150 ease-in-out shadow-md hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:brightness-90">Scan Another Item</Button>
+                </CardFooter>
+                </Card>
+            )}
           </>
         )}
       </CardContent>
