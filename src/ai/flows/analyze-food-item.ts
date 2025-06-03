@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -44,7 +45,7 @@ export type AnalyzeFoodItemOutput = z.infer<typeof AnalyzeFoodItemOutputSchema>;
 
 const simulateResultsTool = ai.defineTool({
   name: 'simulateResults',
-  description: 'Simulates the analysis of a food item when the AI is uncertain.',
+  description: 'Simulates the analysis of a food item when the AI is uncertain or analysis fails.',
   inputSchema: z.object({
     itemType: z.string().describe('The type of food item (fruit, vegetable, etc.).'),
   }),
@@ -62,7 +63,7 @@ async (input) => {
       waterPercentage: 80,
       sugarPercentage: 5,
       fiberPercentage: 3,
-      vitaminsAndMinerals: 'Vitamin C, Potassium',
+      vitaminsAndMinerals: 'Vitamin C, Potassium (Simulated)',
     },
     chemicalResidues: ['Simulated pesticide A', 'Simulated preservative B'],
     edibility: 'Wash & Eat',
@@ -93,8 +94,23 @@ const analyzeFoodItemFlow = ai.defineFlow(
     inputSchema: AnalyzeFoodItemInputSchema,
     outputSchema: AnalyzeFoodItemOutputSchema,
   },
-  async input => {
-    const {output} = await prompt(input);
-    return output!;
+  async (flowInput) => {
+    try {
+      const {output} = await prompt(flowInput);
+      if (!output) {
+        // This case should ideally be handled by Genkit if output schema isn't met,
+        // but as a safeguard:
+        console.warn('AI prompt returned no output, falling back to simulation for unexpected reason.');
+        return await simulateResultsTool.fn({ itemType: 'Food Item (No Output)' });
+      }
+      return output;
+    } catch (error) {
+      console.error('Error during AI food analysis prompt call:', error);
+      console.warn('Falling back to simulated results due to an error during AI analysis.');
+      // Directly call the tool's underlying function as a fallback.
+      // Provide a generic itemType since the analysis failed.
+      return await simulateResultsTool.fn({ itemType: 'Food Item (Analysis Error)' });
+    }
   }
 );
+
