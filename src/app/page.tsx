@@ -47,7 +47,7 @@ export default function HomePage() {
           <Button
             size="lg"
             asChild
-            className="bg-accent hover:bg-accent/90 text-accent-foreground hover:scale-105 active:scale-100 transition-transform duration-200 ease-in-out animate-in fade-in zoom-in-75 delay-600 duration-500"
+            className="bg-accent hover:bg-accent/90 text-accent-foreground hover:scale-105 active:scale-100 transition-transform duration-200 ease-in-out"
           >
             <Link href="/scan">
               <ScanLine className="mr-2 h-5 w-5" />
