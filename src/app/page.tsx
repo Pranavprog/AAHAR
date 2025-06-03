@@ -90,9 +90,9 @@ export default function HomePage() {
                 </DialogTitle>
               </DialogHeader>
               <div className="p-6 pt-4">
-                 <p className="text-left mb-4 text-sm text-muted-foreground">
+                 <DialogDescription className="text-left mb-4 text-sm text-muted-foreground">
                   Follow these steps to scan your food item effectively:
-                </p>
+                </DialogDescription>
                 <ol className="list-decimal list-inside space-y-2 pl-4 text-sm text-muted-foreground">
                   <li>Open the AAHAR app and navigate to the 'Scan' page. Select the 'Image Scan' tab.</li>
                   <li>If using the camera, grant camera access when prompted. Position your fruit or vegetable clearly in view.</li>
@@ -117,8 +117,8 @@ export default function HomePage() {
                   <p className="text-muted-foreground">For packaged items, enter the barcode number manually.</p>
                    <div className="overflow-hidden rounded-md mt-4 shadow-lg">
                     <Image
-                      src="https://i.postimg.cc/SNKHk3V1/barcode-scanner-hand.jpg"
-                      alt="Barcode entry with scanner"
+                      src="https://i.postimg.cc/0j4c1Gmg/download.jpg"
+                      alt="Barcode entry"
                       width={300}
                       height={200}
                       className="group-hover:scale-105 transition-transform duration-300 ease-in-out"
@@ -134,9 +134,9 @@ export default function HomePage() {
                 </DialogTitle>
               </DialogHeader>
               <div className="p-6 pt-4">
-                <p className="text-left mb-4 text-sm text-muted-foreground">
+                <DialogDescription className="text-left mb-4 text-sm text-muted-foreground">
                   To analyze a packaged food item using its barcode:
-                </p>
+                </DialogDescription>
                 <ol className="list-decimal list-inside space-y-2 pl-4 text-sm text-muted-foreground">
                   <li>Navigate to the 'Scan' page and select the 'Barcode Scan' tab.</li>
                   <li>Locate the barcode number (typically UPC or EAN) on the product packaging.</li>
@@ -178,9 +178,9 @@ export default function HomePage() {
                 </DialogTitle>
               </DialogHeader>
               <div className="p-6 pt-4">
-                <p className="text-left mb-4 text-sm text-muted-foreground">
+                <DialogDescription className="text-left mb-4 text-sm text-muted-foreground">
                   Here's what happens when AAHAR's advanced AI analyzes your item:
-                </p>
+                </DialogDescription>
                 <ul className="list-disc list-inside space-y-2 pl-4 text-sm text-muted-foreground">
                   <li><strong>Identification:</strong> For images, the AI identifies the food item. For barcodes, it retrieves product details.</li>
                   <li><strong>Component Estimation (Images):</strong> Estimates key nutritional components like water, sugar, and fiber.</li>
@@ -223,9 +223,9 @@ export default function HomePage() {
                 </DialogTitle>
               </DialogHeader>
               <div className="p-6 pt-4">
-                <p className="text-left mb-4 text-sm text-muted-foreground">
+                <DialogDescription className="text-left mb-4 text-sm text-muted-foreground">
                   After analysis, AAHAR provides several key insights:
-                </p>
+                </DialogDescription>
                 <ul className="list-disc list-inside space-y-2 pl-4 text-sm text-muted-foreground">
                   <li><strong>Item Identification:</strong> Confirms the name/type of food or product.</li>
                   <li><strong>Key Components/Ingredients:</strong> Shows estimated percentages (for produce) or lists key ingredients (for packaged items).</li>
