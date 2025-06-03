@@ -11,7 +11,7 @@ import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { analyzeFoodItem, type AnalyzeFoodItemOutput } from "@/ai/flows/analyze-food-item";
 import { analyzeBarcode, type AnalyzeBarcodeOutput, type AnalyzeBarcodeInput } from "@/ai/flows/analyze-barcode-flow";
-import { Camera, AlertTriangle, CheckCircle2, XCircle, ShieldAlert, ShieldCheck, ShieldX, Mic, Percent, Droplets, Waves, Leaf, Package, Microscope, Info, Zap, Upload, Palette, Barcode as BarcodeIcon, Tag, Building, ListChecks, AlertCircle } from "lucide-react";
+import { Camera, AlertTriangle, CheckCircle2, XCircle, ShieldAlert, ShieldCheck, ShieldX, Mic, Percent, Droplets, Waves, Leaf, Package, Microscope, Info, Zap, Upload, Palette, Barcode as BarcodeIcon, Tag, Building, ListChecks, AlertCircle, ScanLine } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const EdibilityBadge: React.FC<{ status: AnalyzeFoodItemOutput["edibility"] }> = ({ status }) => {
@@ -151,7 +151,7 @@ export default function ScanPageClient() {
         }
       };
     }
-  }, [imagePreview, hasCameraPermission, toast, activeTab]);
+  }, [imagePreview, hasCameraPermission, activeTab]);
 
 
   const handleCaptureImage = () => {
@@ -662,3 +662,4 @@ export default function ScanPageClient() {
     </Card>
   );
 }
+
