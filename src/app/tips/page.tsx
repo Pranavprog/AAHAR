@@ -1,9 +1,9 @@
 import TipCard from '@/components/tips/TipCard';
-import { Lightbulb, Leaf, ShieldCheck } from 'lucide-react';
+import { Lightbulb, Leaf, ShieldCheck, Info } from 'lucide-react';
 
 export const metadata = {
-  title: "Food Tips | ScanBite",
-  description: "Helpful tips for detoxing, cleaning, and safely consuming your food.",
+  title: "Food Tips | AAHAR",
+  description: "Helpful tips for detoxing, cleaning, and safely consuming your food, brought to you by AAHAR.",
 };
 
 const tips = [
@@ -58,7 +58,7 @@ export default function TipsPage() {
         <Lightbulb className="mx-auto text-primary h-12 w-12 mb-4" />
         <h1 className="text-3xl md:text-4xl font-headline font-bold text-foreground">Food Safety & Cleaning Tips</h1>
         <p className="text-muted-foreground mt-2 max-w-2xl mx-auto">
-          Discover useful tips for detoxifying, cleaning, and safely consuming your food items.
+          Discover useful tips for detoxifying, cleaning, and safely consuming your food items with AAHAR.
         </p>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

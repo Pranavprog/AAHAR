@@ -29,9 +29,12 @@ export default function HomePage() {
         <div className="container mx-auto px-4">
           <Leaf className="mx-auto text-primary h-16 w-16 mb-6" />
           <h1 className="text-4xl md:text-5xl font-headline font-bold mb-6 text-foreground">
-            Welcome to <span className="text-primary">ScanBite</span>
+            Welcome to <span className="text-primary">AAHAR</span>
           </h1>
-          <p className="text-lg md:text-xl text-muted-foreground mb-10 max-w-2xl mx-auto">
+          <p className="text-lg md:text-xl text-muted-foreground mb-4 max-w-2xl mx-auto">
+            AI-Assisted Harmful Additive Recognition
+          </p>
+          <p className="text-md md:text-lg text-muted-foreground mb-10 max-w-2xl mx-auto">
             Your intelligent companion for understanding what's in your food. Scan fruits, vegetables, and more to get instant insights.
           </p>
           <Button size="lg" asChild className="bg-accent hover:bg-accent/90 text-accent-foreground">

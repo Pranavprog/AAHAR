@@ -5,8 +5,8 @@ import Header from '@/components/layout/Header';
 import { cn } from '@/lib/utils';
 
 export const metadata: Metadata = {
-  title: 'ScanBite - Food Analyzer',
-  description: 'Scan fruits, vegetables, and food items to analyze their components, chemical content, and edibility.',
+  title: 'AAHAR - AI Food Analysis',
+  description: 'AAHAR (AI-Assisted Harmful Additive Recognition): Scan fruits, vegetables, and food items to analyze their components, chemical content, and edibility.',
 };
 
 export default function RootLayout({
@@ -28,7 +28,7 @@ export default function RootLayout({
         </main>
         <Toaster />
         <footer className="py-4 text-center text-sm text-muted-foreground">
-          © {new Date().getFullYear()} ScanBite. All rights reserved.
+          © {new Date().getFullYear()} AAHAR. All rights reserved.
         </footer>
       </body>
     </html>
