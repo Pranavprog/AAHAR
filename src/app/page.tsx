@@ -54,7 +54,7 @@ export default function HomePage() {
       <section className="container mx-auto px-4 animate-in fade-in slide-in-from-bottom-12 duration-500 delay-200">
         <h2 className="text-3xl font-headline font-semibold text-center mb-10 text-foreground animate-in fade-in slide-in-from-bottom-8 duration-500 delay-300">How It Works</h2>
         <div className="grid md:grid-cols-3 gap-8">
-          <Card className="shadow-lg group hover:shadow-2xl hover:scale-[1.08] transition-all duration-300 ease-in-out animate-in fade-in slide-in-from-bottom-10 duration-500 delay-400">
+          <Card className="border border-primary/50 shadow-[0_0_8px_1px_hsl(var(--primary)/0.5)] hover:shadow-[0_0_16px_2px_hsl(var(--primary)/0.7)] group hover:scale-[1.08] transition-all duration-300 ease-in-out animate-in fade-in slide-in-from-bottom-10 duration-500 delay-400">
             <CardHeader>
               <div className="p-3 bg-primary/20 rounded-full w-fit mb-3 group-hover:scale-110 transition-transform duration-300 ease-in-out">
                 <ScanLine className="h-8 w-8 text-primary" />
@@ -75,7 +75,7 @@ export default function HomePage() {
               </div>
             </CardContent>
           </Card>
-          <Card className="shadow-lg group hover:shadow-2xl hover:scale-[1.08] transition-all duration-300 ease-in-out animate-in fade-in slide-in-from-bottom-10 duration-500 delay-500">
+          <Card className="border border-primary/50 shadow-[0_0_8px_1px_hsl(var(--primary)/0.5)] hover:shadow-[0_0_16px_2px_hsl(var(--primary)/0.7)] group hover:scale-[1.08] transition-all duration-300 ease-in-out animate-in fade-in slide-in-from-bottom-10 duration-500 delay-500">
             <CardHeader>
               <div className="p-3 bg-primary/20 rounded-full w-fit mb-3 group-hover:scale-110 transition-transform duration-300 ease-in-out">
                  <Layers className="h-8 w-8 text-primary"/>
@@ -96,7 +96,7 @@ export default function HomePage() {
               </div>
             </CardContent>
           </Card>
-          <Card className="shadow-lg group hover:shadow-2xl hover:scale-[1.08] transition-all duration-300 ease-in-out animate-in fade-in slide-in-from-bottom-10 duration-500 delay-600">
+          <Card className="border border-primary/50 shadow-[0_0_8px_1px_hsl(var(--primary)/0.5)] hover:shadow-[0_0_16px_2px_hsl(var(--primary)/0.7)] group hover:scale-[1.08] transition-all duration-300 ease-in-out animate-in fade-in slide-in-from-bottom-10 duration-500 delay-600">
             <CardHeader>
                <div className="p-3 bg-primary/20 rounded-full w-fit mb-3 group-hover:scale-110 transition-transform duration-300 ease-in-out">
                 <Lightbulb className="h-8 w-8 text-primary" />
