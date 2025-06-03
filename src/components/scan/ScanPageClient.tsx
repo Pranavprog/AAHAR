@@ -10,8 +10,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { analyzeFoodItem, type AnalyzeFoodItemOutput } from "@/ai/flows/analyze-food-item";
-import { analyzeBarcode, type AnalyzeBarcodeOutput, type AnalyzeBarcodeInput } from "@/ai/flows/analyze-barcode-flow";
-import { Camera, AlertTriangle, CheckCircle2, XCircle, ShieldAlert, ShieldCheck, ShieldX, Mic, Percent, Droplets, Waves, Leaf, Package, Microscope, Info, Zap, Upload, Palette, Barcode as BarcodeIcon, Tag, Building, ListChecks, AlertCircle, ScanLine } from "lucide-react";
+import { analyzeBarcode, type AnalyzeBarcodeOutput } from "@/ai/flows/analyze-barcode-flow";
+import { Camera, AlertTriangle, CheckCircle2, XCircle, ShieldAlert, ShieldCheck, ShieldX, Mic, Percent, Droplets, Waves, Leaf, Package, Microscope, Info, Zap, Upload, Palette, Barcode as BarcodeIcon, Tag, Building, ListChecks, AlertCircle, ScanLine, Image as ImageIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const EdibilityBadge: React.FC<{ status: AnalyzeFoodItemOutput["edibility"] }> = ({ status }) => {
@@ -67,7 +67,7 @@ export default function ScanPageClient() {
   const { toast } = useToast();
 
  useEffect(() => {
-    if (imagePreview || activeTab !== "image-scan") { // Stop camera if preview shown OR not on image tab
+    if (imagePreview || activeTab !== "image-scan") { 
       if (streamRef.current) {
         streamRef.current.getTracks().forEach(track => track.stop());
         streamRef.current = null;
@@ -75,13 +75,12 @@ export default function ScanPageClient() {
       if (videoRef.current) {
         videoRef.current.srcObject = null;
       }
-      if(activeTab !== "image-scan" && hasCameraPermission) { // if switching tabs away from active camera
-         setHasCameraPermission(null); // Reset permission state for next tab switch to image scan
+      if(activeTab !== "image-scan" && hasCameraPermission) { 
+         setHasCameraPermission(null); 
       }
       return;
     }
 
-    // Only initialize camera if on image-scan tab, no preview, and permission not yet determined/granted
     if (activeTab === "image-scan" && !imagePreview && hasCameraPermission === null) {
       let isEffectMounted = true;
 
@@ -118,11 +117,11 @@ export default function ScanPageClient() {
                   description: 'Could not start camera playback. Please check permissions or if another app is using it.',
                 });
               }
-              stream.getTracks().forEach(track => track.stop()); // Ensure stream is stopped on play error
+              stream.getTracks().forEach(track => track.stop()); 
               if(videoRef.current) videoRef.current.srcObject = null;
               streamRef.current = null;
             });
-            if (isEffectMounted && videoRef.current.srcObject) setHasCameraPermission(true); // Set true only if play() started and srcObject still set
+            if (isEffectMounted && videoRef.current.srcObject) setHasCameraPermission(true); 
           } else {
             stream.getTracks().forEach(track => track.stop()); 
             if (isEffectMounted) setHasCameraPermission(false);
@@ -151,7 +150,7 @@ export default function ScanPageClient() {
         }
       };
     }
-  }, [imagePreview, hasCameraPermission, activeTab]);
+  }, [imagePreview, hasCameraPermission, activeTab, toast]);
 
 
   const handleCaptureImage = () => {
@@ -159,7 +158,7 @@ export default function ScanPageClient() {
       !videoRef.current ||
       !canvasRef.current ||
       !videoRef.current.srcObject ||
-      videoRef.current.readyState < videoRef.current.HAVE_ENOUGH_DATA || // Check if video has enough data
+      videoRef.current.readyState < videoRef.current.HAVE_ENOUGH_DATA || 
       videoRef.current.paused ||
       videoRef.current.ended ||
       hasCameraPermission !== true
@@ -205,7 +204,7 @@ export default function ScanPageClient() {
       if (videoRef.current) {
         videoRef.current.srcObject = null;
       }
-      setHasCameraPermission(false); // No longer using live camera
+      setHasCameraPermission(false); 
 
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -217,14 +216,12 @@ export default function ScanPageClient() {
       };
       reader.readAsDataURL(file);
     }
-    // Reset file input to allow uploading the same file again if needed
     if (event.target) {
       event.target.value = ''; 
     }
   };
 
   const handleRetake = () => {
-    // Stop any existing camera stream first
     if (streamRef.current) {
         streamRef.current.getTracks().forEach(track => track.stop());
         streamRef.current = null;
@@ -238,11 +235,10 @@ export default function ScanPageClient() {
     setAnalysisResult(null);
     setError(null);
     
-    // Clear the file input in case a file was previously selected
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
-    setHasCameraPermission(null); // This will trigger the useEffect to re-request camera
+    setHasCameraPermission(null); 
   };
 
 
@@ -301,7 +297,6 @@ export default function ScanPageClient() {
   };
   
   useEffect(() => {
-    // Cleanup speech synthesis on component unmount
     return () => {
       if (typeof window !== 'undefined' && window.speechSynthesis) {
         window.speechSynthesis.cancel();
@@ -542,7 +537,7 @@ export default function ScanPageClient() {
               <div className="flex gap-2">
                 <Input 
                   type="text" 
-                  placeholder="e.g., 123456789012" 
+                  placeholder="e.g., 049000042566 (Coca-Cola Classic)" 
                   value={barcodeInputValue}
                   onChange={(e) => setBarcodeInputValue(e.target.value)}
                   className="flex-grow"
@@ -579,9 +574,9 @@ export default function ScanPageClient() {
               <>
                 <Alert variant="default" className="mt-6 mb-4 bg-muted/30 border-muted/50">
                   <Info className="h-5 w-5 text-primary" />
-                  <AlertTitle className="text-foreground font-semibold">AI-Generated Analysis (Barcode)</AlertTitle>
+                  <AlertTitle className="text-foreground font-semibold">Product Analysis (Barcode)</AlertTitle>
                   <AlertDescription className="text-muted-foreground">
-                    This analysis is AI-generated based on simulated product data and is for informational purposes. Consult experts for critical decisions.
+                    Product information is fetched from Open Food Facts. Ingredient analysis is AI-generated and for informational purposes. It may not be 100% accurate. Consult experts for critical decisions.
                   </AlertDescription>
                 </Alert>
 
@@ -594,8 +589,9 @@ export default function ScanPageClient() {
                         </CardHeader>
                         <CardContent className="p-6">
                             <p className="text-muted-foreground text-lg">
-                                Could not retrieve information for barcode: {barcodeInputValue}. Please check the number or try another.
+                                {barcodeAnalysisResult.overallAssessment || `Could not retrieve information for barcode: ${barcodeInputValue}. Please check the number or try another.`}
                             </p>
+                            {barcodeAnalysisResult.source && <p className="text-sm text-muted-foreground/70 mt-2">Data source: {barcodeAnalysisResult.source}</p>}
                         </CardContent>
                          <CardFooter className="border-t border-border/50 pt-6">
                             <Button variant="outline" onClick={handleBarcodeScanNew} className="text-base py-2.5 px-6">Scan New Barcode</Button>
@@ -604,10 +600,28 @@ export default function ScanPageClient() {
                 ) : (
                     <Card className="bg-card/70 backdrop-blur-sm shadow-xl border border-accent/60 shadow-[0_0_15px_3px_hsl(var(--accent)/0.3),0_0_25px_7px_hsl(var(--accent)/0.15)] mt-6">
                         <CardHeader className="border-b border-border/50 pb-4">
-                             <CardTitle className="font-headline text-2xl md:text-3xl text-primary flex items-center gap-3">
-                                <Tag size={30} /> {barcodeAnalysisResult.productName || "Product"}
-                            </CardTitle>
-                            {barcodeAnalysisResult.brand && <CardDescription className="pt-1 text-base text-muted-foreground flex items-center gap-2"><Building size={16}/>{barcodeAnalysisResult.brand}</CardDescription>}
+                             <div className="flex flex-col sm:flex-row gap-4 items-start">
+                                {barcodeAnalysisResult.imageUrl ? (
+                                    <Image
+                                        src={barcodeAnalysisResult.imageUrl}
+                                        alt={barcodeAnalysisResult.productName || "Product Image"}
+                                        width={100}
+                                        height={100}
+                                        className="rounded-md object-contain border border-border shadow-md bg-white"
+                                    />
+                                ) : (
+                                     <div className="w-[100px] h-[100px] flex items-center justify-center bg-muted/70 rounded-md border border-border shadow-md">
+                                        <ImageIcon size={48} className="text-muted-foreground" />
+                                    </div>
+                                )}
+                                <div className="flex-1">
+                                    <CardTitle className="font-headline text-2xl md:text-3xl text-primary flex items-center gap-2">
+                                        <Tag size={30} /> {barcodeAnalysisResult.productName || "Product"}
+                                    </CardTitle>
+                                    {barcodeAnalysisResult.brand && <CardDescription className="pt-1 text-base text-muted-foreground flex items-center gap-2"><Building size={16}/>{barcodeAnalysisResult.brand}</CardDescription>}
+                                     {barcodeAnalysisResult.source && <CardDescription className="pt-1 text-xs text-muted-foreground/70">Data from: {barcodeAnalysisResult.source}</CardDescription>}
+                                </div>
+                            </div>
                         </CardHeader>
                         <CardContent className="space-y-5 p-6">
                             {barcodeAnalysisResult.ingredients && barcodeAnalysisResult.ingredients.length > 0 && (
@@ -662,4 +676,3 @@ export default function ScanPageClient() {
     </Card>
   );
 }
-
