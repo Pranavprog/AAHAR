@@ -13,15 +13,15 @@ interface TipCardProps {
 
 export default function TipCard({ title, description, icon, image, imageHint }: TipCardProps) {
   return (
-    <Card className="border border-primary/40 shadow-[0_0_12px_2px_hsl(var(--primary)/0.3)] group-hover:shadow-[0_0_20px_4px_hsl(var(--primary)/0.5)] hover:scale-[1.08] transition-all duration-300 ease-in-out flex flex-col h-full overflow-hidden animate-in fade-in-5 slide-in-from-bottom-10">
+    <Card className="border border-primary/50 shadow-[0_0_10px_2px_hsl(var(--primary)/0.4),0_0_20px_5px_hsl(var(--primary)/0.2)] hover:shadow-[0_0_18px_3px_hsl(var(--primary)/0.6),0_0_30px_8px_hsl(var(--primary)/0.3)] group hover:scale-[1.05] transition-all duration-300 ease-in-out flex flex-col h-full overflow-hidden animate-in fade-in-5 slide-in-from-bottom-10 bg-card/80 backdrop-blur-sm">
       <CardHeader className="flex flex-row items-start gap-4 space-y-0 pb-3">
-        {icon && <div className="p-2 bg-primary/10 rounded-full group-hover:bg-primary/20 group-hover:scale-110 transition-all duration-300 ease-in-out">{icon}</div>}
+        {icon && <div className="p-2.5 bg-primary/15 rounded-full group-hover:bg-primary/25 group-hover:scale-110 transition-all duration-300 ease-in-out">{icon}</div>}
         <div className="flex-1">
-          <CardTitle className="font-headline text-lg">{title}</CardTitle>
+          <CardTitle className="font-headline text-xl">{title}</CardTitle>
         </div>
       </CardHeader>
       <CardContent className="flex-grow flex flex-col">
-        <div className="overflow-hidden rounded-md mb-4">
+        <div className="overflow-hidden rounded-md mb-4 shadow-md">
           <Image
             src={image}
             alt={title}

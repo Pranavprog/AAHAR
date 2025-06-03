@@ -12,28 +12,31 @@ import { Camera, AlertTriangle, CheckCircle2, XCircle, ShieldAlert, ShieldCheck,
 import { useToast } from "@/hooks/use-toast";
 
 const EdibilityBadge: React.FC<{ status: AnalyzeFoodItemOutput["edibility"] }> = ({ status }) => {
+  let badgeClasses = "inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-semibold shadow-md ";
+  let IconComponent = ShieldCheck;
+
   switch (status) {
     case "Safe to Eat":
-      return (
-        <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-700 dark:bg-green-700 dark:text-green-100">
-          <ShieldCheck size={18} /> Safe to Eat
-        </span>
-      );
+      badgeClasses += "bg-green-500/20 text-green-300 border border-green-500/50";
+      IconComponent = ShieldCheck;
+      break;
     case "Wash & Eat":
-      return (
-        <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-700 dark:bg-yellow-600 dark:text-yellow-50">
-          <ShieldAlert size={18} /> Wash & Eat
-        </span>
-      );
+      badgeClasses += "bg-yellow-500/20 text-yellow-300 border border-yellow-500/50";
+      IconComponent = ShieldAlert;
+      break;
     case "Unsafe":
-      return (
-        <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-700 dark:bg-red-700 dark:text-red-100">
-          <ShieldX size={18} /> Unsafe
-        </span>
-      );
+      badgeClasses += "bg-red-500/20 text-red-300 border border-red-500/50";
+      IconComponent = ShieldX;
+      break;
     default:
       return null;
   }
+
+  return (
+    <span className={badgeClasses}>
+      <IconComponent size={18} /> {status}
+    </span>
+  );
 };
 
 
@@ -288,10 +291,10 @@ export default function ScanPageClient() {
 
 
   return (
-    <Card className="w-full border border-primary/40 shadow-[0_0_15px_3px_hsl(var(--primary)/0.4)]">
+    <Card className="w-full border border-primary/60 shadow-[0_0_18px_4px_hsl(var(--primary)/0.3),0_0_30px_8px_hsl(var(--primary)/0.15)] bg-card/80 backdrop-blur-sm">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 font-headline">
-          <Camera className="text-primary" /> Scan Item
+        <CardTitle className="flex items-center gap-3 font-headline text-2xl">
+          <Camera className="text-primary h-7 w-7" /> Scan Item
         </CardTitle>
         <CardDescription>
           Use your camera or upload an image file of the food item for AAHAR to analyze.
@@ -301,7 +304,7 @@ export default function ScanPageClient() {
         <canvas ref={canvasRef} style={{ display: 'none' }} />
         <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden" />
 
-        <div className="border border-dashed border-border rounded-lg p-4 flex flex-col items-center space-y-4 min-h-[300px] justify-center">
+        <div className="border-2 border-dashed border-border/70 rounded-lg p-4 flex flex-col items-center space-y-4 min-h-[300px] justify-center bg-background/30">
           {imagePreview ? (
             <>
               <p className="text-sm text-muted-foreground">Image Preview:</p>
@@ -310,20 +313,20 @@ export default function ScanPageClient() {
                 alt="Food item preview"
                 width={300}
                 height={300}
-                className="rounded-md object-contain max-h-[300px] shadow-md"
+                className="rounded-md object-contain max-h-[300px] shadow-xl border border-border"
               />
             </>
           ) : (
             <>
-              <div className="w-full max-w-md aspect-video bg-muted rounded-md overflow-hidden relative">
+              <div className="w-full max-w-md aspect-video bg-muted/70 rounded-md overflow-hidden relative shadow-inner">
                 <video ref={videoRef} className="w-full h-full object-cover" playsInline muted />
                 {hasCameraPermission === null && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-background/70">
+                  <div className="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm">
                     <p className="text-muted-foreground p-4 text-center">Initializing camera... Please allow camera access if prompted.</p>
                   </div>
                 )}
                  {hasCameraPermission === false && ( 
-                  <div className="absolute inset-0 flex items-center justify-center bg-background/80">
+                  <div className="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm">
                     <p className="text-muted-foreground p-4 text-center">Camera not available or permission denied. You can upload a file instead.</p>
                   </div>
                 )}
@@ -331,8 +334,8 @@ export default function ScanPageClient() {
             </>
           )}
            {hasCameraPermission === false && !imagePreview && ( 
-            <Alert variant="destructive" className="w-full">
-              <AlertTriangle className="h-4 w-4" />
+            <Alert variant="destructive" className="w-full bg-destructive/20 border-destructive/50 text-destructive-foreground">
+              <AlertTriangle className="h-5 w-5" />
               <AlertTitle>Camera Access Denied or Unavailable</AlertTitle>
               <AlertDescription>
                 AAHAR needs access to your camera to scan items. Please enable camera permissions in your browser settings or upload an image file.
@@ -344,36 +347,38 @@ export default function ScanPageClient() {
         <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
           {!imagePreview && (
             <>
-              <Button onClick={handleCaptureImage} disabled={isLoading || hasCameraPermission !== true} className="bg-accent hover:bg-accent/90 text-accent-foreground w-full sm:w-auto">
+              <Button onClick={handleCaptureImage} disabled={isLoading || hasCameraPermission !== true} className="bg-accent hover:bg-accent/90 text-accent-foreground w-full sm:w-auto text-base py-2.5 px-6">
                 <Camera className="mr-2 h-5 w-5" /> Capture Image
               </Button>
-              <Button onClick={() => fileInputRef.current?.click()} variant="outline" disabled={isLoading} className="w-full sm:w-auto">
+              <Button onClick={() => fileInputRef.current?.click()} variant="outline" disabled={isLoading} className="w-full sm:w-auto text-base py-2.5 px-6 border-primary/70 text-primary hover:bg-primary/10">
                 <Upload className="mr-2 h-5 w-5" /> Upload Image File
               </Button>
             </>
           )}
           {imagePreview && (
             <>
-              <Button onClick={handleAnalyze} disabled={isLoading || !imageDataUri} className="bg-primary hover:bg-primary/90 w-full sm:w-auto">
+              <Button onClick={handleAnalyze} disabled={isLoading || !imageDataUri} className="bg-primary hover:bg-primary/90 w-full sm:w-auto text-base py-2.5 px-6">
                 <Zap className="mr-2 h-5 w-5" /> Analyze Image
               </Button>
-              <Button onClick={handleRetake} variant="outline" disabled={isLoading} className="w-full sm:w-auto">
-                Scan Another (Retake/New File)
+              <Button onClick={handleRetake} variant="outline" disabled={isLoading} className="w-full sm:w-auto text-base py-2.5 px-6">
+                Scan Another
               </Button>
             </>
           )}
         </div>
 
         {isLoading && (
-          <div className="space-y-2 pt-4">
-            <Progress value={undefined} className="w-full h-2 [&>div]:bg-primary" /> 
-            <p className="text-sm text-primary text-center animate-pulse">AI is analyzing your item, please wait...</p>
+          <div className="space-y-3 pt-4">
+             <div className="flex justify-center">
+                <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+             </div>
+            <p className="text-md text-primary text-center">AI is analyzing your item, please wait...</p>
           </div>
         )}
 
         {error && (
-          <Alert variant="destructive" className="mt-4">
-            <AlertTriangle className="h-4 w-4" />
+          <Alert variant="destructive" className="mt-4 bg-destructive/20 border-destructive/50 text-destructive-foreground">
+            <AlertTriangle className="h-5 w-5" />
             <AlertTitle>Analysis Error</AlertTitle>
             <AlertDescription>{error}</AlertDescription>
           </Alert>
@@ -381,54 +386,56 @@ export default function ScanPageClient() {
 
         {analysisResult && (
           <>
-            <Alert variant="default" className="mt-6 mb-4">
-              <Info className="h-4 w-4" />
-              <AlertTitle>AI-Generated Analysis</AlertTitle>
-              <AlertDescription>
+            <Alert variant="default" className="mt-6 mb-4 bg-muted/30 border-muted/50">
+              <Info className="h-5 w-5 text-primary" />
+              <AlertTitle className="text-foreground font-semibold">AI-Generated Analysis</AlertTitle>
+              <AlertDescription className="text-muted-foreground">
                 The information provided by AAHAR is generated by an AI model. While we aim for accuracy, this analysis is for informational purposes only and may not be 100% complete or precise. It should not be used as a substitute for professional medical, nutritional, or food safety advice. Always consult with a qualified expert for critical decisions regarding your health and food consumption.
               </AlertDescription>
             </Alert>
-            <Card className="bg-background/50 shadow-inner border border-accent/40 shadow-[0_0_12px_2px_hsl(var(--accent)/0.3)]">
-              <CardHeader>
-                <CardTitle className="font-headline text-2xl text-primary flex items-center gap-2">
-                  <Package size={28} /> Analysis Complete: {analysisResult.identification.name}
-                </CardTitle>
-                <div className="flex items-center justify-between">
-                  <EdibilityBadge status={analysisResult.edibility} />
-                  <Button variant="ghost" size="icon" onClick={() => speakResults(analysisResult)} title="Read results aloud">
-                    <Mic className="text-foreground" />
+            <Card className="bg-card/70 backdrop-blur-sm shadow-xl border border-accent/60 shadow-[0_0_15px_3px_hsl(var(--accent)/0.3),0_0_25px_7px_hsl(var(--accent)/0.15)]">
+              <CardHeader className="border-b border-border/50 pb-4">
+                <div className="flex justify-between items-center">
+                  <CardTitle className="font-headline text-2xl md:text-3xl text-primary flex items-center gap-3">
+                    <Package size={30} /> {analysisResult.identification.name}
+                  </CardTitle>
+                  <Button variant="ghost" size="icon" onClick={() => speakResults(analysisResult)} title="Read results aloud" className="text-foreground/70 hover:text-primary hover:bg-primary/10">
+                    <Mic className="h-6 w-6" />
                   </Button>
                 </div>
+                <CardDescription className="pt-2">
+                  <EdibilityBadge status={analysisResult.edibility} />
+                </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-6 p-6">
                 <div>
-                  <h3 className="text-lg font-semibold flex items-center gap-2"><Microscope size={20} />Identification</h3>
-                  <p>Type: {analysisResult.identification.itemType}</p>
-                  <div className="flex items-center gap-2">
-                    Confidence: 
-                    <Progress value={analysisResult.identification.confidence * 100} className="w-1/2 h-2" /> 
-                    <span>{(analysisResult.identification.confidence * 100).toFixed(0)}%</span>
+                  <h3 className="text-xl font-semibold flex items-center gap-2.5 mb-2 text-foreground/90"><Microscope size={22} className="text-accent"/>Identification</h3>
+                  <p className="text-muted-foreground">Type: <span className="font-medium text-foreground/80">{analysisResult.identification.itemType}</span></p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="text-muted-foreground">Confidence:</span>
+                    <Progress value={analysisResult.identification.confidence * 100} className="w-1/2 h-2.5 bg-muted/50 [&>div]:bg-primary" /> 
+                    <span className="font-medium text-foreground/80">{(analysisResult.identification.confidence * 100).toFixed(0)}%</span>
                   </div>
                 </div>
                 
-                <div>
-                  <h3 className="text-lg font-semibold flex items-center gap-2"><Percent size={20} />Key Components</h3>
-                  <ul className="list-disc list-inside ml-4 space-y-1 text-sm">
-                    <li className="flex items-center gap-1"><Droplets size={16} className="text-blue-500" />Water: {analysisResult.components.waterPercentage}%</li>
-                    <li className="flex items-center gap-1"><Waves size={16} className="text-orange-500" />Sugar: {analysisResult.components.sugarPercentage}%</li>
-                    <li className="flex items-center gap-1"><Leaf size={16} className="text-green-500" />Fiber: {analysisResult.components.fiberPercentage}%</li>
+                <div className="border-t border-border/50 pt-4">
+                  <h3 className="text-xl font-semibold flex items-center gap-2.5 mb-2 text-foreground/90"><Percent size={22} className="text-accent"/>Key Components</h3>
+                  <ul className="space-y-1.5 text-muted-foreground">
+                    <li className="flex items-center gap-2"><Droplets size={18} className="text-blue-400" />Water: <span className="font-medium text-foreground/80">{analysisResult.components.waterPercentage}%</span></li>
+                    <li className="flex items-center gap-2"><Waves size={18} className="text-orange-400" />Sugar: <span className="font-medium text-foreground/80">{analysisResult.components.sugarPercentage}%</span></li>
+                    <li className="flex items-center gap-2"><Leaf size={18} className="text-green-400" />Fiber: <span className="font-medium text-foreground/80">{analysisResult.components.fiberPercentage}%</span></li>
                   </ul>
                 </div>
 
-                <div>
-                  <h3 className="text-lg font-semibold flex items-center gap-2"><Info size={20} />Vitamins & Minerals</h3>
-                  <p className="text-sm">{analysisResult.components.vitaminsAndMinerals || "Not specified"}</p>
+                <div className="border-t border-border/50 pt-4">
+                  <h3 className="text-xl font-semibold flex items-center gap-2.5 mb-2 text-foreground/90"><Info size={22} className="text-accent"/>Vitamins & Minerals</h3>
+                  <p className="text-sm text-muted-foreground">{analysisResult.components.vitaminsAndMinerals || "Not specified"}</p>
                 </div>
 
                 {analysisResult.chemicalResidues && analysisResult.chemicalResidues.length > 0 && (
-                  <div>
-                    <h3 className="text-lg font-semibold text-destructive flex items-center gap-2"><AlertTriangle size={20} />Potential Chemical Residues</h3>
-                    <ul className="list-disc list-inside ml-4 space-y-1 text-sm text-destructive-foreground bg-destructive/10 p-2 rounded-md">
+                  <div className="border-t border-border/50 pt-4">
+                    <h3 className="text-xl font-semibold text-red-400 flex items-center gap-2.5 mb-2"><AlertTriangle size={22} />Potential Chemical Residues</h3>
+                    <ul className="list-disc list-inside ml-1 space-y-1 text-sm text-red-300/90 bg-red-500/10 p-3 rounded-md border border-red-500/30">
                       {analysisResult.chemicalResidues.map((residue, index) => (
                         <li key={index}>{residue}</li>
                       ))}
@@ -436,8 +443,8 @@ export default function ScanPageClient() {
                   </div>
                 )}
               </CardContent>
-              <CardFooter>
-                  <Button variant="outline" onClick={handleRetake}>Scan Another Item</Button>
+              <CardFooter className="border-t border-border/50 pt-6">
+                  <Button variant="outline" onClick={handleRetake} className="text-base py-2.5 px-6">Scan Another Item</Button>
               </CardFooter>
             </Card>
           </>
@@ -446,4 +453,3 @@ export default function ScanPageClient() {
     </Card>
   );
 }
-
