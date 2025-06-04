@@ -71,12 +71,10 @@ export default function ScanPageClient() {
 
     const startCamera = async () => {
       if (!videoRef.current) return;
-      // If stream is already active and permission is true, do nothing.
       if (streamRef.current && streamRef.current.active && hasCameraPermission === true) {
         return;
       }
 
-      // Defensively clear any old stream/srcObject
       if (videoRef.current.srcObject) videoRef.current.srcObject = null;
       if (streamRef.current) {
           streamRef.current.getTracks().forEach(t => t.stop());
@@ -85,13 +83,13 @@ export default function ScanPageClient() {
 
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-        if (!isMounted) { // Check if component is still mounted after async operation
+        if (!isMounted) {
           stream.getTracks().forEach(track => track.stop());
           return;
         }
         streamRef.current = stream;
         videoRef.current.srcObject = stream;
-        await videoRef.current.play(); // Explicitly play the video
+        await videoRef.current.play();
         if (isMounted) setHasCameraPermission(true);
       } catch (err) {
         console.error("Camera access or play error:", err);
@@ -111,16 +109,12 @@ export default function ScanPageClient() {
         streamRef.current.getTracks().forEach(track => track.stop());
         streamRef.current = null;
       }
-      if (videoRef.current && videoRef.current.srcObject) { // Check srcObject before nullifying
+      if (videoRef.current && videoRef.current.srcObject) {
         videoRef.current.srcObject = null;
       }
     };
 
     if (activeTab === "image-scan" && !imagePreview) {
-      // Attempt to start camera if:
-      // 1. Permission state is unknown (null) - initial load or after retake.
-      // 2. Permission was granted (true), but stream is not currently active.
-      // Do NOT attempt if permission was explicitly denied (false).
       if (hasCameraPermission !== false) {
           startCamera();
       }
@@ -129,10 +123,10 @@ export default function ScanPageClient() {
     }
 
     return () => {
-      isMounted = false; // Mark as unmounted
-      stopCamera(); // Cleanup on unmount or when dependencies change
+      isMounted = false;
+      stopCamera();
     };
-  }, [activeTab, imagePreview, hasCameraPermission]); // toast removed as it's stable
+  }, [activeTab, imagePreview, hasCameraPermission, toast]);
 
 
   const handleCaptureImage = () => {
@@ -140,7 +134,7 @@ export default function ScanPageClient() {
       !videoRef.current ||
       !canvasRef.current ||
       !streamRef.current || 
-      !streamRef.current.active || // Ensure stream is active
+      !streamRef.current.active ||
       hasCameraPermission !== true ||
       videoRef.current.videoWidth === 0 || 
       videoRef.current.paused || 
@@ -165,7 +159,7 @@ export default function ScanPageClient() {
       context.drawImage(video, 0, 0, canvas.width, canvas.height);
       const dataUri = canvas.toDataURL('image/webp');
       setImageDataUri(dataUri);
-      setImagePreview(dataUri); // This will trigger useEffect to stop the camera
+      setImagePreview(dataUri);
       setAnalysisResult(null);
       setError(null);
     } else {
@@ -184,10 +178,10 @@ export default function ScanPageClient() {
       reader.onloadend = () => {
         const dataUri = reader.result as string;
         setImageDataUri(dataUri);
-        setImagePreview(dataUri); // This will trigger useEffect to stop any active camera
+        setImagePreview(dataUri);
         setAnalysisResult(null);
         setError(null);
-        setHasCameraPermission(false); // Explicitly set because we are using a file
+        setHasCameraPermission(false); 
       };
       reader.readAsDataURL(file);
     }
@@ -205,8 +199,6 @@ export default function ScanPageClient() {
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
-    // Crucially, set hasCameraPermission to null to allow useEffect to re-attempt camera acquisition.
-    // The useEffect cleanup should have already stopped any active stream when imagePreview was set.
     setHasCameraPermission(null); 
   };
 
@@ -261,13 +253,12 @@ export default function ScanPageClient() {
       
       const utterance = new SpeechSynthesisUtterance(textToSpeak);
       utterance.lang = 'en-US';
-      window.speechSynthesis.cancel(); // Cancel any previous speech
+      window.speechSynthesis.cancel(); 
       window.speechSynthesis.speak(utterance);
     }
   };
   
   useEffect(() => {
-    // Cleanup speech synthesis on component unmount
     return () => {
       if (typeof window !== 'undefined' && window.speechSynthesis) {
         window.speechSynthesis.cancel();
@@ -348,9 +339,7 @@ export default function ScanPageClient() {
               ) : (
                 <>
                   <div className="w-full max-w-md aspect-video bg-muted/70 rounded-md overflow-hidden relative shadow-inner">
-                    {/* Video element is always rendered to attach ref and stream */}
                     <video ref={videoRef} className="w-full h-full object-cover" playsInline autoPlay muted />
-                    {/* Overlays for user feedback */}
                     {activeTab === "image-scan" && !imagePreview && hasCameraPermission === null && (
                       <div className="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm">
                         <p className="text-muted-foreground p-4 text-center">Initializing camera... Please allow camera access if prompted.</p>
@@ -487,12 +476,23 @@ export default function ScanPageClient() {
 
                         {analysisResult.chemicalResidues && analysisResult.chemicalResidues.length > 0 && (
                         <div className="border-t border-border/50 pt-4">
-                            <h3 className="text-xl font-semibold text-red-400 flex items-center gap-2.5 mb-2"><AlertTriangle size={22} />Potential Chemical Residues</h3>
-                            <ul className="list-disc list-inside ml-1 space-y-1 text-sm text-red-300/90 bg-red-500/10 p-3 rounded-md border border-red-500/30">
+                            <h3 className="text-xl font-semibold text-red-400 flex items-center gap-2.5 mb-3"><AlertTriangle size={22} />Potential Chemical Residues & Analysis</h3>
+                            <div className="space-y-3">
                             {analysisResult.chemicalResidues.map((residue, index) => (
-                                <li key={index}>{residue}</li>
+                                <div key={index} className="text-sm bg-red-500/10 p-3.5 rounded-md border border-red-500/40 shadow-md">
+                                    <p className="font-semibold text-red-300 text-base">{residue.name}</p>
+                                    {residue.estimatedPercentage !== undefined && (
+                                        <p className="text-red-400/90 mt-1">Estimated Presence: <span className="font-medium">{residue.estimatedPercentage.toFixed(2)}%</span></p>
+                                    )}
+                                    {residue.hazardousEffects && (
+                                        <p className="text-red-400/80 mt-1.5">Potential Effects: {residue.hazardousEffects}</p>
+                                    )}
+                                     {!residue.estimatedPercentage && !residue.hazardousEffects && (
+                                        <p className="text-red-400/70 mt-1">No specific percentage or effects details provided by AI for this residue.</p>
+                                    )}
+                                </div>
                             ))}
-                            </ul>
+                            </div>
                         </div>
                         )}
                     </CardContent>

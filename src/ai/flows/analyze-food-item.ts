@@ -22,6 +22,12 @@ const AnalyzeFoodItemInputSchema = z.object({
 });
 export type AnalyzeFoodItemInput = z.infer<typeof AnalyzeFoodItemInputSchema>;
 
+const ChemicalResidueSchema = z.object({
+  name: z.string().describe('The name of the identified chemical residue (e.g., "Calcium Carbonate (CaCO3)").'),
+  estimatedPercentage: z.number().optional().describe('An estimated percentage of this residue on the item. This is an estimation and might be very low or trace if applicable.'),
+  hazardousEffects: z.string().optional().describe('Potential hazardous effects if this residue is consumed in significant quantities or by sensitive individuals.'),
+});
+
 const AnalyzeFoodItemOutputSchema = z.object({
   identification: z.object({
     isFoodItem: z.boolean().describe('Whether the AI identifies the subject of the image as a food item.'),
@@ -37,9 +43,9 @@ const AnalyzeFoodItemOutputSchema = z.object({
     vitaminsAndMinerals: z.string().optional().describe('A summary of notable vitamins and minerals likely present.'),
   }).optional(),
   chemicalResidues: z
-    .array(z.string())
+    .array(ChemicalResidueSchema)
     .optional()
-    .describe('A list of potential chemical residues or treatments. Only if isFoodItem is true and residues are identified.'),
+    .describe('A list of potential chemical residues, their estimated percentages, and potential hazardous effects. Only if isFoodItem is true and residues are identified.'),
   edibility: z
     .enum(['Safe to Eat', 'Wash & Eat', 'Unsafe'])
     .optional()
@@ -71,7 +77,10 @@ async (input) => {
       fiberPercentage: 3,
       vitaminsAndMinerals: 'Vitamin C, Potassium (Simulated)',
     },
-    chemicalResidues: ['Simulated pesticide A', 'Simulated preservative B'],
+    chemicalResidues: [
+      { name: 'Simulated Pesticide Alpha', estimatedPercentage: 0.05, hazardousEffects: 'May cause mild irritation if not washed properly. Generally considered low risk at trace levels.' },
+      { name: 'Simulated Preservative Beta', hazardousEffects: 'Some individuals may experience sensitivity. Commonly used in food processing.' }
+    ],
     edibility: 'Wash & Eat',
   };
 });
@@ -95,7 +104,10 @@ const prompt = ai.definePrompt({
     *   **Identification**: Determine the type of food (fruit, vegetable, grain, processed item, etc.) and its common name for the 'name' field. Assess your confidence level (0-1) for the 'confidence' field.
     *   **Color Analysis**: Pay close attention to the visual characteristics, especially the color(s) of the item. List the dominant colors you observe in the 'dominantColors' array.
     *   **Component Breakdown**: Estimate percentages for water, sugar, and fiber. List notable vitamins and minerals typically found in such an item.
-    *   **Chemical Residues**: Based on visual cues or common agricultural/processing practices for the identified item, list any potential chemical residues.
+    *   **Chemical Residues**: Based on visual cues or common agricultural/processing practices for the identified item, list any potential chemical residues. For each residue, provide:
+        *   'name': The name of the chemical (e.g., "Calcium Carbonate (CaCO3)", "Generic Pesticide Type A").
+        *   'estimatedPercentage': An estimated percentage of this residue on the item. This is an estimation and may not always be determinable from visual cues alone; if so, you can omit this field or state that it's trace. If you do provide a percentage, ensure it is a number.
+        *   'hazardousEffects': A brief description of potential hazardous effects if this residue is consumed in significant quantities or by sensitive individuals (e.g., "May cause stomach upset if ingested in large amounts," "Generally recognized as safe (GRAS) but wash item," "Commonly used, wash thoroughly to minimize exposure").
     *   **Edibility**: Recommend an edibility status: 'Safe to Eat', 'Wash & Eat', or 'Unsafe'.
 
 Strive for the most accurate and detailed analysis possible based purely on the provided image.
