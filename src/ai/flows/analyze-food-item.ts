@@ -3,7 +3,7 @@
 
 /**
  * @fileOverview An AI agent for analyzing food items, including identification,
- * component breakdown, potential chemical residues, and color analysis.
+ * component breakdown, potential chemical residues, organic status, and color analysis.
  *
  * - analyzeFoodItem - A function that handles the food item analysis process.
  * - AnalyzeFoodItemInput - The input type for the analyzeFoodItem function.
@@ -23,7 +23,7 @@ const AnalyzeFoodItemInputSchema = z.object({
 export type AnalyzeFoodItemInput = z.infer<typeof AnalyzeFoodItemInputSchema>;
 
 const ChemicalResidueSchema = z.object({
-  name: z.string().describe('The name of the identified chemical residue (e.g., "Calcium Carbonate (CaCO3)").'),
+  name: z.string().describe('The name of the identified chemical residue (e.g., "Calcium Carbonate (CaCO3)", "Chlorpyrifos"). Be as specific as possible, including common chemical formulas if appropriate.'),
   estimatedPercentage: z.number().optional().describe('An estimated percentage of this residue on the item. This is an estimation and might be very low or trace if applicable.'),
   hazardousEffects: z.string().optional().describe('Potential hazardous effects if this residue is consumed in significant quantities or by sensitive individuals.'),
 });
@@ -35,6 +35,8 @@ const AnalyzeFoodItemOutputSchema = z.object({
     name: z.string().optional().describe('If isFoodItem is true, the name of the identified food item. If false, a message like "Non-food item detected".'),
     confidence: z.number().optional().describe('The confidence level of the food identification (0-1). Only if isFoodItem is true.'),
     dominantColors: z.array(z.string()).optional().describe('An array of dominant colors observed in the item. Only if isFoodItem is true and colors are identifiable.'),
+    isOrganic: z.boolean().optional().describe('An estimation of whether the food item appears to be organic based on visual cues. This is not a definitive certification.'),
+    organicReasoning: z.string().optional().describe('Brief reasoning if an organic determination is made. Only if isFoodItem is true and isOrganic is set.'),
   }),
   components: z.object({
     waterPercentage: z.number().optional().describe('The estimated percentage of water in the food item.'),
@@ -70,6 +72,8 @@ async (input) => {
       name: `Simulated ${input.itemType}`,
       confidence: 0.5, // Confidence for the *simulated food identification*
       dominantColors: ['simulated color 1', 'simulated color 2'],
+      isOrganic: undefined, // Cannot determine from simulation
+      organicReasoning: 'Organic status cannot be determined from simulation.',
     },
     components: {
       waterPercentage: 80,
@@ -78,8 +82,8 @@ async (input) => {
       vitaminsAndMinerals: 'Vitamin C, Potassium (Simulated)',
     },
     chemicalResidues: [
-      { name: 'Simulated Pesticide Alpha', estimatedPercentage: 0.05, hazardousEffects: 'May cause mild irritation if not washed properly. Generally considered low risk at trace levels.' },
-      { name: 'Simulated Preservative Beta', hazardousEffects: 'Some individuals may experience sensitivity. Commonly used in food processing.' }
+      { name: 'Simulated Pesticide Gamma (Organophosphate)', estimatedPercentage: 0.05, hazardousEffects: 'May cause mild irritation if not washed properly. Generally considered low risk at trace levels.' },
+      { name: 'Simulated Wax Coating (Carnauba Wax)', hazardousEffects: 'Generally recognized as safe (GRAS) for consumption.' }
     ],
     edibility: 'Wash & Eat',
   };
@@ -97,16 +101,17 @@ const prompt = ai.definePrompt({
   prompt: `You are an AI expert in food analysis. Your primary task is to determine if the item in the provided photo is a food item.
 
 1.  **Is it Food?**: First, analyze the image and determine if the subject is a food item.
-    *   If it is NOT a food item, set 'isFoodItem' to false. Set the 'name' field in 'identification' to "Non-food item detected" or a more specific description (e.g., "Electronic component detected", "Object identified as a tool"). You MUST leave other food-specific fields (like itemType, confidence, dominantColors, components, chemicalResidues, edibility) empty or undefined.
+    *   If it is NOT a food item, set 'isFoodItem' to false. Set the 'name' field in 'identification' to "Non-food item detected" or a more specific description (e.g., "Electronic component detected", "Object identified as a tool"). You MUST leave other food-specific fields (like itemType, confidence, dominantColors, components, chemicalResidues, edibility, isOrganic, organicReasoning) empty or undefined.
     *   If it IS a food item, set 'isFoodItem' to true and proceed with the detailed analysis below. Ensure that the 'name' field contains the identified food name.
 
 2.  **Detailed Food Analysis (Only if isFoodItem is true)**:
     *   **Identification**: Determine the type of food (fruit, vegetable, grain, processed item, etc.) and its common name for the 'name' field. Assess your confidence level (0-1) for the 'confidence' field.
+    *   **Organic Status Estimation**: Based on visual cues (e.g., appearance, uniformity, blemishes, visible packaging or labels if any), estimate if the item appears to be 'isOrganic' (true/false). This is an estimation, not a definitive certification. If you make a determination, provide a brief 'organicReasoning' (e.g., "Appears conventionally grown due to high uniformity," "No clear indicators of organic or non-organic status," "Possible organic due to natural blemishes").
     *   **Color Analysis**: Pay close attention to the visual characteristics, especially the color(s) of the item. List the dominant colors you observe in the 'dominantColors' array.
     *   **Component Breakdown**: Estimate percentages for water, sugar, and fiber. List notable vitamins and minerals typically found in such an item.
     *   **Chemical Residues**: Based on visual cues or common agricultural/processing practices for the identified item, list any potential chemical residues. For each residue, provide:
-        *   'name': The name of the chemical (e.g., "Calcium Carbonate (CaCO3)", "Generic Pesticide Type A").
-        *   'estimatedPercentage': An estimated percentage of this residue on the item. This is an estimation and may not always be determinable from visual cues alone; if so, you can omit this field or state that it's trace. If you do provide a percentage, ensure it is a number.
+        *   'name': The specific name of the chemical (e.g., "Calcium Carbonate (CaCO3)", "Generic Pesticide Type A - Organophosphate"). Be as detailed as possible.
+        *   'estimatedPercentage': An estimated percentage (number) of this residue on the item. This is an estimation and may not always be determinable; if so, you can omit this field or state that it's trace.
         *   'hazardousEffects': A brief description of potential hazardous effects if this residue is consumed in significant quantities or by sensitive individuals (e.g., "May cause stomach upset if ingested in large amounts," "Generally recognized as safe (GRAS) but wash item," "Commonly used, wash thoroughly to minimize exposure").
     *   **Edibility**: Recommend an edibility status: 'Safe to Eat', 'Wash & Eat', or 'Unsafe'.
 
@@ -149,7 +154,7 @@ const analyzeFoodItemFlow = ai.defineFlow(
       }
 
       // At this point, output.identification.isFoodItem is true.
-      // The AI believes it's food. The 'output' could be a direct analysis or from the simulateResultsTool
+      // The 'output' could be a direct analysis or from the simulateResultsTool
       // if the AI decided to use it based on the prompt instructions.
       // Ensure 'isFoodItem' is true, especially if it came from the simulation tool.
       return {
@@ -174,3 +179,5 @@ const analyzeFoodItemFlow = ai.defineFlow(
     }
   }
 );
+
+    

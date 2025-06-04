@@ -11,7 +11,7 @@ import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { analyzeFoodItem, type AnalyzeFoodItemOutput } from "@/ai/flows/analyze-food-item";
 import { analyzeBarcode, type AnalyzeBarcodeOutput } from "@/ai/flows/analyze-barcode-flow";
-import { Camera, AlertTriangle, CheckCircle2, XCircle, ShieldAlert, ShieldCheck, ShieldX, Mic, Percent, Droplets, Waves, Leaf, Package, Microscope, Info, Zap, Upload, Palette, Barcode as BarcodeIcon, Tag, Building, ListChecks, AlertCircle, ScanLine, Image as ImageIcon } from "lucide-react";
+import { Camera, AlertTriangle, CheckCircle2, XCircle, ShieldAlert, ShieldCheck, ShieldX, Mic, Percent, Droplets, Waves, Leaf, Package, Microscope, Info, Zap, Upload, Palette, Barcode as BarcodeIcon, Tag, Building, ListChecks, AlertCircle, ScanLine, Image as ImageIcon, Sparkles, HelpCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const EdibilityBadge: React.FC<{ status: AnalyzeFoodItemOutput["edibility"] }> = ({ status }) => {
@@ -66,19 +66,21 @@ export default function ScanPageClient() {
 
   const { toast } = useToast();
 
-  useEffect(() => {
+ useEffect(() => {
     let isMounted = true;
 
     const startCamera = async () => {
-      if (!videoRef.current) return;
-      if (streamRef.current && streamRef.current.active && hasCameraPermission === true) {
+      if (!videoRef.current || (streamRef.current && streamRef.current.active)) {
+        if (isMounted) setHasCameraPermission(true); // Already active or no video ref
         return;
       }
-
-      if (videoRef.current.srcObject) videoRef.current.srcObject = null;
+      
+      // Ensure previous stream is stopped
       if (streamRef.current) {
-          streamRef.current.getTracks().forEach(t => t.stop());
-          streamRef.current = null;
+        streamRef.current.getTracks().forEach(track => track.stop());
+      }
+      if (videoRef.current && videoRef.current.srcObject) {
+        videoRef.current.srcObject = null;
       }
 
       try {
@@ -88,9 +90,21 @@ export default function ScanPageClient() {
           return;
         }
         streamRef.current = stream;
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play();
-        if (isMounted) setHasCameraPermission(true);
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          await videoRef.current.play().catch(playError => {
+            console.error("Video play error:", playError);
+            if (isMounted) {
+              setHasCameraPermission(false);
+               toast({
+                variant: "destructive",
+                title: "Camera Playback Error",
+                description: "Could not play video stream. Please check browser settings.",
+              });
+            }
+          });
+          if (isMounted) setHasCameraPermission(true);
+        }
       } catch (err) {
         console.error("Camera access or play error:", err);
         if (isMounted) {
@@ -110,14 +124,16 @@ export default function ScanPageClient() {
         streamRef.current = null;
       }
       if (videoRef.current && videoRef.current.srcObject) {
+        const tracks = (videoRef.current.srcObject as MediaStream)?.getTracks();
+        tracks?.forEach(track => track.stop());
         videoRef.current.srcObject = null;
       }
     };
-
+    
     if (activeTab === "image-scan" && !imagePreview) {
-      if (hasCameraPermission !== false) {
-          startCamera();
-      }
+        if (hasCameraPermission === null || (hasCameraPermission === true && (!streamRef.current || !streamRef.current.active))) {
+             startCamera();
+        }
     } else {
       stopCamera();
     }
@@ -242,6 +258,9 @@ export default function ScanPageClient() {
       let textToSpeak = `Scanned item: ${result.identification.name || 'Unknown food'}. `;
       if (result.edibility) {
         textToSpeak += `Edibility: ${result.edibility}. `;
+      }
+      if (result.identification.isOrganic !== undefined) {
+        textToSpeak += `Organic status: ${result.identification.isOrganic ? 'Likely organic.' : 'Likely not organic, or status unclear.'} `;
       }
       if (result.identification.dominantColors && result.identification.dominantColors.length > 0) {
         textToSpeak += `Dominant colors observed: ${result.identification.dominantColors.join(', ')}. `;
@@ -401,7 +420,7 @@ export default function ScanPageClient() {
                   <Info className="h-5 w-5 text-primary" />
                   <AlertTitle className="text-foreground font-semibold">AI-Generated Analysis (Image)</AlertTitle>
                   <AlertDescription className="text-muted-foreground">
-                    This analysis is AI-generated and for informational purposes. It may not be 100% accurate. Consult experts for critical decisions.
+                    This analysis is AI-generated and for informational purposes. Chemical composition and organic status are estimations based on visual cues and may not be 100% accurate. Consult experts for critical decisions.
                   </AlertDescription>
                 </Alert>
                 
@@ -447,6 +466,15 @@ export default function ScanPageClient() {
                             <Progress value={analysisResult.identification.confidence * 100} className="w-1/2 h-2.5 bg-muted/50 [&>div]:bg-primary" /> 
                             <span className="font-medium text-foreground/80">{(analysisResult.identification.confidence * 100).toFixed(0)}%</span>
                             </div>
+                        )}
+                        {analysisResult.identification.isOrganic !== undefined && (
+                            <p className="text-muted-foreground mt-1 flex items-center gap-2">
+                                {analysisResult.identification.isOrganic ? <Sparkles size={18} className="text-green-400" /> : <HelpCircle size={18} className="text-yellow-400" />}
+                                Organic Status: <span className="font-medium text-foreground/80">
+                                    {analysisResult.identification.isOrganic ? "Likely Organic" : "Likely Not Organic / Undetermined"}
+                                </span>
+                                {analysisResult.identification.organicReasoning && <span className="text-xs italic text-muted-foreground/70">({analysisResult.identification.organicReasoning})</span>}
+                            </p>
                         )}
                         {analysisResult.identification.dominantColors && analysisResult.identification.dominantColors.length > 0 && (
                             <div className="mt-2">
@@ -650,3 +678,4 @@ export default function ScanPageClient() {
   );
 }
 
+    
