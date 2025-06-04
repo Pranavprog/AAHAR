@@ -23,9 +23,9 @@ const AnalyzeFoodItemInputSchema = z.object({
 export type AnalyzeFoodItemInput = z.infer<typeof AnalyzeFoodItemInputSchema>;
 
 const ChemicalResidueSchema = z.object({
-  name: z.string().describe('The name of the identified chemical residue (e.g., "Calcium Carbonate (CaCO3)", "Chlorpyrifos"). Be as specific as possible, including common chemical formulas if appropriate.'),
-  estimatedPercentage: z.number().optional().describe('An estimated percentage of this residue on the item. This is an estimation and might be very low or trace if applicable.'),
-  hazardousEffects: z.string().optional().describe('Potential hazardous effects if this residue is consumed in significant quantities or by sensitive individuals.'),
+  name: z.string().describe('The specific name of the identified chemical residue. Be as detailed as possible, including common chemical formulas if appropriate (e.g., "Calcium Carbonate (CaCO3)", "Chlorpyrifos (Organophosphate Pesticide)").'),
+  estimatedPercentage: z.number().optional().describe('An estimated percentage (numeric value) of this residue on the item. This is an estimation and might be very low or trace if applicable.'),
+  hazardousEffects: z.string().optional().describe('Potential hazardous effects if this residue is consumed in significant quantities or by sensitive individuals. If known, also include context for its presence (e.g., "Used as a pesticide on non-organic apples", "Preservative to extend shelf life").'),
 });
 
 const AnalyzeFoodItemOutputSchema = z.object({
@@ -47,7 +47,7 @@ const AnalyzeFoodItemOutputSchema = z.object({
   chemicalResidues: z
     .array(ChemicalResidueSchema)
     .optional()
-    .describe('A list of potential chemical residues, their estimated percentages, and potential hazardous effects. Only if isFoodItem is true and residues are identified.'),
+    .describe('A list of potential chemical residues. If the item is determined to be non-organic or its organic status is unclear, provide a more detailed list of chemicals commonly associated with conventional farming/processing for this item. For each, include specific name (with formula if common), estimated percentage, and detailed hazardous effects/context. Only if isFoodItem is true and residues are identified.'),
   edibility: z
     .enum(['Safe to Eat', 'Wash & Eat', 'Unsafe'])
     .optional()
@@ -60,32 +60,45 @@ const simulateResultsTool = ai.defineTool({
   description: 'Simulates the analysis of a FOOD ITEM when the AI is uncertain or analysis fails to provide a confident direct assessment for that food item. This tool should only be used if the item is confirmed to be food.',
   inputSchema: z.object({
     itemType: z.string().describe('The type of food item (fruit, vegetable, etc.) to simulate.'),
+    assumedOrganic: z.boolean().optional().describe('Whether to simulate an organic item (true) or a conventionally grown item (false/undefined).')
   }),
   outputSchema: AnalyzeFoodItemOutputSchema,
 },
 async (input) => {
-  // Simulate the analysis by providing default or random values FOR A FOOD ITEM.
+  const isSimulatedOrganic = input.assumedOrganic === true;
+  let simulatedResidues: z.infer<typeof ChemicalResidueSchema>[] = [];
+
+  if (isSimulatedOrganic) {
+    simulatedResidues = [
+      { name: 'Natural Waxes (e.g., Carnauba from organic sources)', hazardousEffects: 'Generally recognized as safe (GRAS) for consumption, common on organic produce for protection.' },
+      { name: 'Kaolin Clay (trace)', estimatedPercentage: 0.01, hazardousEffects: 'Natural mineral, sometimes used in organic farming for pest control. Harmless in trace amounts.'}
+    ];
+  } else { // Simulate non-organic
+    simulatedResidues = [
+      { name: 'Simulated Pesticide Alpha (e.g., Organophosphate type)', estimatedPercentage: 0.05, hazardousEffects: 'Synthetic pesticide. May cause mild irritation if not washed properly. Potential neurotoxic effects with prolonged high exposure. Wash item thoroughly.' },
+      { name: 'Simulated Fungicide Beta (e.g., Triazole type)', estimatedPercentage: 0.02, hazardousEffects: 'Synthetic fungicide to prevent spoilage. Potential for endocrine disruption. Wash item thoroughly.' },
+      { name: 'Simulated Wax Coating (Petroleum-based)', hazardousEffects: 'Commonly used on conventional produce to extend shelf life and improve appearance. Generally considered safe in small amounts but some prefer to avoid.' }
+    ];
+  }
+
   return {
     identification: {
-      isFoodItem: true, // CRITICAL: Tool simulates a food item
+      isFoodItem: true, 
       itemType: input.itemType,
-      name: `Simulated ${input.itemType}`,
-      confidence: 0.5, // Confidence for the *simulated food identification*
+      name: `Simulated ${isSimulatedOrganic ? 'Organic' : 'Conventional'} ${input.itemType}`,
+      confidence: 0.5, 
       dominantColors: ['simulated color 1', 'simulated color 2'],
-      isOrganic: undefined, // Cannot determine from simulation
-      organicReasoning: 'Organic status cannot be determined from simulation.',
+      isOrganic: isSimulatedOrganic, 
+      organicReasoning: isSimulatedOrganic ? 'Simulated as organic based on tool input.' : 'Simulated as conventionally grown based on tool input; exhibits typical appearance for such items.',
     },
     components: {
       waterPercentage: 80,
-      sugarPercentage: 5,
+      sugarPercentage: isSimulatedOrganic ? 7 : 5, // Slightly different for variation
       fiberPercentage: 3,
       vitaminsAndMinerals: 'Vitamin C, Potassium (Simulated)',
     },
-    chemicalResidues: [
-      { name: 'Simulated Pesticide Gamma (Organophosphate)', estimatedPercentage: 0.05, hazardousEffects: 'May cause mild irritation if not washed properly. Generally considered low risk at trace levels.' },
-      { name: 'Simulated Wax Coating (Carnauba Wax)', hazardousEffects: 'Generally recognized as safe (GRAS) for consumption.' }
-    ],
-    edibility: 'Wash & Eat',
+    chemicalResidues: simulatedResidues,
+    edibility: 'Wash & Eat', // Default, could be varied
   };
 });
 
@@ -106,17 +119,20 @@ const prompt = ai.definePrompt({
 
 2.  **Detailed Food Analysis (Only if isFoodItem is true)**:
     *   **Identification**: Determine the type of food (fruit, vegetable, grain, processed item, etc.) and its common name for the 'name' field. Assess your confidence level (0-1) for the 'confidence' field.
-    *   **Organic Status Estimation**: Based on visual cues (e.g., appearance, uniformity, blemishes, visible packaging or labels if any), estimate if the item appears to be 'isOrganic' (true/false). This is an estimation, not a definitive certification. If you make a determination, provide a brief 'organicReasoning' (e.g., "Appears conventionally grown due to high uniformity," "No clear indicators of organic or non-organic status," "Possible organic due to natural blemishes").
+    *   **Organic Status Estimation**: Based on visual cues (e.g., appearance, uniformity, blemishes, visible packaging or labels if any), estimate if the item appears to be 'isOrganic' (true/false). This is an estimation, not a definitive certification. If you make a determination, provide a brief 'organicReasoning' (e.g., "Appears conventionally grown due to high uniformity and glossy finish," "No clear indicators of organic or non-organic status from visual inspection," "Possible organic due to natural blemishes and less uniform shape").
     *   **Color Analysis**: Pay close attention to the visual characteristics, especially the color(s) of the item. List the dominant colors you observe in the 'dominantColors' array.
     *   **Component Breakdown**: Estimate percentages for water, sugar, and fiber. List notable vitamins and minerals typically found in such an item.
-    *   **Chemical Residues**: Based on visual cues or common agricultural/processing practices for the identified item, list any potential chemical residues. For each residue, provide:
-        *   'name': The specific name of the chemical (e.g., "Calcium Carbonate (CaCO3)", "Generic Pesticide Type A - Organophosphate"). Be as detailed as possible.
-        *   'estimatedPercentage': An estimated percentage (number) of this residue on the item. This is an estimation and may not always be determinable; if so, you can omit this field or state that it's trace.
-        *   'hazardousEffects': A brief description of potential hazardous effects if this residue is consumed in significant quantities or by sensitive individuals (e.g., "May cause stomach upset if ingested in large amounts," "Generally recognized as safe (GRAS) but wash item," "Commonly used, wash thoroughly to minimize exposure").
+    *   **Chemical Residues**:
+        *   If the item is assessed as likely **non-organic**, or if its **organic status is undetermined** (implying conventional practices might have been used), provide a more thorough list of potential chemical residues commonly associated with non-organic farming/processing for this specific food item.
+        *   For each residue, provide:
+            *   'name': The specific name of the chemical. Be as detailed as possible, including common chemical formulas if appropriate (e.g., "Calcium Carbonate (CaCO3)", "Chlorpyrifos (Organophosphate Pesticide)").
+            *   'estimatedPercentage': An estimated percentage (numeric value) of this residue on the item. This is an estimation and might be very low or trace if applicable.
+            *   'hazardousEffects': A detailed description of potential hazardous effects if this residue is consumed in significant quantities or by sensitive individuals. If known, also include context for its presence (e.g., "Used as a systemic pesticide on non-organic apples to control codling moth", "Common preservative (E220) to prevent browning and microbial growth in dried fruits or wine, can cause reactions in sulfite-sensitive individuals").
+        *   If the item is assessed as likely **organic**, the list of chemical residues may be shorter, focusing on naturally occurring compounds, GRAS (Generally Recognized As Safe) processing aids allowed in organic production, or residues that might be present due to environmental factors (with appropriate caveats).
     *   **Edibility**: Recommend an edibility status: 'Safe to Eat', 'Wash & Eat', or 'Unsafe'.
 
 Strive for the most accurate and detailed analysis possible based purely on the provided image.
-**If the item IS identified as food (isFoodItem is true) but you are not reasonably confident in your detailed analysis (e.g., food identification confidence < 0.7), or if you cannot make a meaningful assessment of its components or potential safety, you MAY use the 'simulateResults' tool to provide a simulated response for that specific food item.** Do not use the 'simulateResults' tool if the item is clearly not food.
+**If the item IS identified as food (isFoodItem is true) but you are not reasonably confident in your detailed analysis (e.g., food identification confidence < 0.7), or if you cannot make a meaningful assessment of its components or potential safety, you MAY use the 'simulateResults' tool to provide a simulated response for that specific food item.** When using the tool, you can specify if the simulation should assume an organic or conventional item if you have a lean towards one. Do not use the 'simulateResults' tool if the item is clearly not food.
 
 Analyze the following item:
 Photo: {{media url=photoDataUri}}
@@ -179,5 +195,3 @@ const analyzeFoodItemFlow = ai.defineFlow(
     }
   }
 );
-
-    
