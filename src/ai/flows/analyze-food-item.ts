@@ -24,7 +24,7 @@ export type AnalyzeFoodItemInput = z.infer<typeof AnalyzeFoodItemInputSchema>;
 
 const ChemicalResidueSchema = z.object({
   name: z.string().describe('The specific name of the identified chemical residue. Be as detailed as possible, including common chemical formulas if appropriate (e.g., "Calcium Carbonate (CaCO3)", "Chlorpyrifos (Organophosphate Pesticide)").'),
-  estimatedPercentage: z.number().optional().describe('An estimated percentage (numeric value) of this residue on the item. This is an estimation and might be very low or trace if applicable.'),
+  estimatedPercentage: z.number().optional().describe('An estimated percentage (numeric value, e.g., 0.05 for 0.05%) of this residue on the item. If present but in trace amounts, estimate a small non-zero value (e.g., 0.01). Only use 0 if you believe it is absolutely not present or below any detectable limit for visual/contextual estimation.'),
   hazardousEffects: z.string().optional().describe('Potential hazardous effects if this residue is consumed in significant quantities or by sensitive individuals. If known, also include context for its presence (e.g., "Used as a pesticide on non-organic apples", "Preservative to extend shelf life").'),
 });
 
@@ -70,14 +70,14 @@ async (input) => {
 
   if (isSimulatedOrganic) {
     simulatedResidues = [
-      { name: 'Natural Waxes (e.g., Carnauba from organic sources)', hazardousEffects: 'Generally recognized as safe (GRAS) for consumption, common on organic produce for protection.' },
+      { name: 'Natural Waxes (e.g., Carnauba from organic sources)', hazardousEffects: 'Generally recognized as safe (GRAS) for consumption, common on organic produce for protection.', estimatedPercentage: 0.001 },
       { name: 'Kaolin Clay (trace)', estimatedPercentage: 0.01, hazardousEffects: 'Natural mineral, sometimes used in organic farming for pest control. Harmless in trace amounts.'}
     ];
   } else { // Simulate non-organic
     simulatedResidues = [
       { name: 'Simulated Pesticide Alpha (e.g., Organophosphate type)', estimatedPercentage: 0.05, hazardousEffects: 'Synthetic pesticide. May cause mild irritation if not washed properly. Potential neurotoxic effects with prolonged high exposure. Wash item thoroughly.' },
       { name: 'Simulated Fungicide Beta (e.g., Triazole type)', estimatedPercentage: 0.02, hazardousEffects: 'Synthetic fungicide to prevent spoilage. Potential for endocrine disruption. Wash item thoroughly.' },
-      { name: 'Simulated Wax Coating (Petroleum-based)', hazardousEffects: 'Commonly used on conventional produce to extend shelf life and improve appearance. Generally considered safe in small amounts but some prefer to avoid.' }
+      { name: 'Simulated Wax Coating (Petroleum-based)', estimatedPercentage: 0.1, hazardousEffects: 'Commonly used on conventional produce to extend shelf life and improve appearance. Generally considered safe in small amounts but some prefer to avoid.' }
     ];
   }
 
@@ -126,7 +126,7 @@ const prompt = ai.definePrompt({
         *   If the item is assessed as likely **non-organic**, or if its **organic status is undetermined** (implying conventional practices might have been used), provide a more thorough list of potential chemical residues commonly associated with non-organic farming/processing for this specific food item.
         *   For each residue, provide:
             *   'name': The specific name of the chemical. Be as detailed as possible, including common chemical formulas if appropriate (e.g., "Calcium Carbonate (CaCO3)", "Chlorpyrifos (Organophosphate Pesticide)").
-            *   'estimatedPercentage': An estimated percentage (numeric value) of this residue on the item. This is an estimation and might be very low or trace if applicable.
+            *   'estimatedPercentage': Provide an estimated percentage (numeric value, e.g., 0.05 for 0.05%) for this residue. If you believe a residue is present, even in trace amounts common for conventionally grown items, estimate a small but non-zero percentage (e.g., 0.01, 0.05). Avoid using 0% unless you are highly confident the residue is entirely absent or far below typical levels for such items.
             *   'hazardousEffects': A detailed description of potential hazardous effects if this residue is consumed in significant quantities or by sensitive individuals. If known, also include context for its presence (e.g., "Used as a systemic pesticide on non-organic apples to control codling moth", "Common preservative (E220) to prevent browning and microbial growth in dried fruits or wine, can cause reactions in sulfite-sensitive individuals").
         *   If the item is assessed as likely **organic**, the list of chemical residues may be shorter, focusing on naturally occurring compounds, GRAS (Generally Recognized As Safe) processing aids allowed in organic production, or residues that might be present due to environmental factors (with appropriate caveats).
     *   **Edibility**: Recommend an edibility status: 'Safe to Eat', 'Wash & Eat', or 'Unsafe'.
