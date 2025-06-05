@@ -11,7 +11,7 @@ import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { analyzeFoodItem, type AnalyzeFoodItemOutput } from "@/ai/flows/analyze-food-item";
 import { analyzeBarcode, type AnalyzeBarcodeOutput } from "@/ai/flows/analyze-barcode-flow";
-import { Camera, AlertTriangle, CheckCircle2, XCircle, ShieldAlert, ShieldCheck, ShieldX, Mic, Percent, Droplets, Waves, Leaf, Package, Microscope, Info, Zap, Upload, Palette, Barcode as BarcodeIcon, Tag, Building, ListChecks, AlertCircle, ScanLine, Image as ImageIcon, Sparkles, HelpCircle } from "lucide-react";
+import { Camera, AlertTriangle, CheckCircle2, XCircle, ShieldAlert, ShieldCheck, ShieldX, Mic, Percent, Droplets, Waves, Leaf, Package, Microscope, Info, Zap, Upload, Palette, Barcode as BarcodeIcon, Tag, Building, ListChecks, AlertCircle, ScanLine, Image as ImageIcon, Sparkles, HelpCircle, SwitchCamera } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const EdibilityBadge: React.FC<{ status: AnalyzeFoodItemOutput["edibility"] }> = ({ status }) => {
@@ -56,6 +56,8 @@ export default function ScanPageClient() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null); 
   const streamRef = useRef<MediaStream | null>(null);
+  const [currentFacingMode, setCurrentFacingMode] = useState<'user' | 'environment'>('environment');
+
 
   const [barcodeInputValue, setBarcodeInputValue] = useState<string>("");
   const [barcodeAnalysisResult, setBarcodeAnalysisResult] = useState<AnalyzeBarcodeOutput | null>(null);
@@ -66,25 +68,38 @@ export default function ScanPageClient() {
 
   const { toast } = useToast();
 
- useEffect(() => {
+  const stopCamera = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    if (videoRef.current && videoRef.current.srcObject) {
+      const tracks = (videoRef.current.srcObject as MediaStream)?.getTracks();
+      tracks?.forEach(track => track.stop());
+      videoRef.current.srcObject = null;
+    }
+  };
+
+  useEffect(() => {
     let isMounted = true;
 
-    const startCamera = async () => {
-      if (!videoRef.current || (streamRef.current && streamRef.current.active)) {
-        if (isMounted) setHasCameraPermission(true); // Already active or no video ref
+    const startCameraWithMode = async (mode: 'user' | 'environment') => {
+      stopCamera(); // Ensure any existing stream is stopped first
+
+      if (!videoRef.current) {
+        if (isMounted) setHasCameraPermission(false);
         return;
       }
-      
-      // Ensure previous stream is stopped
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach(track => track.stop());
-      }
-      if (videoRef.current && videoRef.current.srcObject) {
-        videoRef.current.srcObject = null;
-      }
+      if (!isMounted) return;
 
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+          video: { 
+            facingMode: mode,
+            width: { ideal: 1280 }, // Optional: request higher resolution
+            height: { ideal: 720 } 
+          } 
+        });
         if (!isMounted) {
           stream.getTracks().forEach(track => track.stop());
           return;
@@ -92,47 +107,51 @@ export default function ScanPageClient() {
         streamRef.current = stream;
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
+          videoRef.current.muted = true; 
+          videoRef.current.playsInline = true;
+          
           await videoRef.current.play().catch(playError => {
             console.error("Video play error:", playError);
             if (isMounted) {
               setHasCameraPermission(false);
-               toast({
+              toast({
                 variant: "destructive",
                 title: "Camera Playback Error",
-                description: "Could not play video stream. Please check browser settings.",
+                description: `Could not play video stream (${(playError as Error).name}). Check permissions or try another camera.`,
               });
             }
           });
-          if (isMounted) setHasCameraPermission(true);
+
+          if (isMounted && videoRef.current.srcObject && !videoRef.current.paused) {
+             setHasCameraPermission(true);
+          } else if (isMounted) {
+             setHasCameraPermission(false);
+          }
         }
-      } catch (err) {
-        console.error("Camera access or play error:", err);
+      } catch (err: any) {
+        console.error(`Camera access error for mode ${mode}:`, err);
         if (isMounted) {
           setHasCameraPermission(false);
+          let description = "Could not start camera. Please check permissions or try uploading a file.";
+          if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+            description = `Camera with facing mode '${mode}' not found. Try the other camera or upload a file.`;
+          } else if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+            description = "Camera permission denied. Please enable camera access in your browser settings.";
+          } else if (err.name === 'OverconstrainedError' || err.name === 'ConstraintNotSatisfiedError') {
+             description = `The selected camera (${mode}) does not support the required constraints (e.g. resolution). Try default settings.`;
+          }
           toast({
             variant: "destructive",
             title: "Camera Error",
-            description: "Could not start camera. Please check permissions or try uploading a file.",
+            description: description,
           });
         }
-      }
-    };
-
-    const stopCamera = () => {
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach(track => track.stop());
-        streamRef.current = null;
-      }
-      if (videoRef.current && videoRef.current.srcObject) {
-        const tracks = (videoRef.current.srcObject as MediaStream)?.getTracks();
-        tracks?.forEach(track => track.stop());
-        videoRef.current.srcObject = null;
       }
     };
     
     if (activeTab === "image-scan" && !imagePreview) {
         if (hasCameraPermission === null || (hasCameraPermission === true && (!streamRef.current || !streamRef.current.active))) {
-             startCamera();
+             startCameraWithMode(currentFacingMode);
         }
     } else {
       stopCamera();
@@ -142,7 +161,7 @@ export default function ScanPageClient() {
       isMounted = false;
       stopCamera();
     };
-  }, [activeTab, imagePreview, hasCameraPermission, toast]);
+  }, [activeTab, imagePreview, hasCameraPermission, currentFacingMode, toast]);
 
 
   const handleCaptureImage = () => {
@@ -173,7 +192,7 @@ export default function ScanPageClient() {
     const context = canvas.getContext('2d');
     if (context) {
       context.drawImage(video, 0, 0, canvas.width, canvas.height);
-      const dataUri = canvas.toDataURL('image/webp');
+      const dataUri = canvas.toDataURL('image/webp'); // Using webp for better compression
       setImageDataUri(dataUri);
       setImagePreview(dataUri);
       setAnalysisResult(null);
@@ -197,7 +216,7 @@ export default function ScanPageClient() {
         setImagePreview(dataUri);
         setAnalysisResult(null);
         setError(null);
-        setHasCameraPermission(false); 
+        setHasCameraPermission(false); // We are no longer using live camera
       };
       reader.readAsDataURL(file);
     }
@@ -215,7 +234,17 @@ export default function ScanPageClient() {
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
+    // Resetting hasCameraPermission to null will trigger useEffect to re-attempt camera start
     setHasCameraPermission(null); 
+  };
+
+  const handleSwitchCamera = () => {
+    setCurrentFacingMode(prevMode => prevMode === 'environment' ? 'user' : 'environment');
+    // Setting hasCameraPermission to null will cause the useEffect to re-evaluate and attempt to start the camera with the new mode.
+    setHasCameraPermission(null); 
+    setImagePreview(null); // Ensure we are in camera view mode
+    setAnalysisResult(null);
+    setError(null);
   };
 
 
@@ -358,7 +387,7 @@ export default function ScanPageClient() {
               ) : (
                 <>
                   <div className="w-full max-w-md aspect-video bg-muted/70 rounded-md overflow-hidden relative shadow-inner">
-                    <video ref={videoRef} className="w-full h-full object-cover" playsInline autoPlay muted />
+                    <video ref={videoRef} className="w-full h-full object-cover" playsInline muted />
                     {activeTab === "image-scan" && !imagePreview && hasCameraPermission === null && (
                       <div className="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm">
                         <p className="text-muted-foreground p-4 text-center">Initializing camera... Please allow camera access if prompted.</p>
@@ -366,7 +395,7 @@ export default function ScanPageClient() {
                     )}
                     {activeTab === "image-scan" && !imagePreview && hasCameraPermission === false && ( 
                       <div className="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm">
-                        <p className="text-muted-foreground p-4 text-center">Camera not available or permission denied. You can upload a file instead.</p>
+                        <p className="text-muted-foreground p-4 text-center">Camera not available or permission denied. You can upload a file instead or try switching cameras.</p>
                       </div>
                     )}
                   </div>
@@ -374,12 +403,17 @@ export default function ScanPageClient() {
               )}
             </div>
 
-            <div className="flex flex-col sm:flex-row justify-center items-center gap-4 mt-6">
+            <div className="flex flex-col sm:flex-row flex-wrap justify-center items-center gap-4 mt-6">
               {!imagePreview && (
                 <>
                   <Button onClick={handleCaptureImage} disabled={isLoading || hasCameraPermission !== true} className="bg-accent hover:bg-accent/90 text-accent-foreground w-full sm:w-auto text-base py-2.5 px-6 transition-all duration-150 ease-in-out shadow-md hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:brightness-90">
                     <Camera className="mr-2 h-5 w-5" /> Capture Image
                   </Button>
+                  {hasCameraPermission !== false && ( // Show switch camera if permission not explicitly false
+                     <Button onClick={handleSwitchCamera} variant="outline" className="w-full sm:w-auto text-base py-2.5 px-6 border-primary/70 text-primary hover:bg-primary/10 transition-all duration-150 ease-in-out shadow-md hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:brightness-90">
+                       <SwitchCamera className="mr-2 h-5 w-5" /> Switch Camera
+                     </Button>
+                  )}
                   <Button onClick={() => fileInputRef.current?.click()} variant="outline" disabled={isLoading} className="w-full sm:w-auto text-base py-2.5 px-6 border-primary/70 text-primary hover:bg-primary/10 transition-all duration-150 ease-in-out shadow-md hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:brightness-90">
                     <Upload className="mr-2 h-5 w-5" /> Upload Image File
                   </Button>
@@ -677,5 +711,3 @@ export default function ScanPageClient() {
     </Card>
   );
 }
-
-    
