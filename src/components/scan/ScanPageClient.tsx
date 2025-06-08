@@ -785,6 +785,3 @@ export default function ScanPageClient() {
     </Card>
   );
 }
-
-
-    
