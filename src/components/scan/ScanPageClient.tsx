@@ -299,7 +299,7 @@ export default function ScanPageClient() {
       const result = await analyzeFoodItem({ photoDataUri: imageDataUri });
       setAnalysisResult(result);
       if (result.identification.isFoodItem) {
-        speakResults(result);
+        speakImageScanAnalysisResults(result);
       }
     } catch (err) {
       console.error("Analysis error:", err);
@@ -315,7 +315,7 @@ export default function ScanPageClient() {
     }
   };
 
-  const speakResults = (result: AnalyzeFoodItemOutput | null) => {
+  const speakImageScanAnalysisResults = (result: AnalyzeFoodItemOutput | null) => {
     if (result && result.identification.isFoodItem && typeof window !== 'undefined' && window.speechSynthesis) {
       let textToSpeak = `Scanned item: ${result.identification.name || 'Unknown food'}. `;
       if (result.edibility) {
@@ -332,6 +332,34 @@ export default function ScanPageClient() {
          if (result.components.sugarPercentage !== undefined) textToSpeak += `Sugar content: ${result.components.sugarPercentage} percent. `;
       }
       
+      const utterance = new SpeechSynthesisUtterance(textToSpeak);
+      utterance.lang = 'en-US';
+      if (selectedVoice) {
+        utterance.voice = selectedVoice;
+      }
+      window.speechSynthesis.cancel(); 
+      window.speechSynthesis.speak(utterance);
+    }
+  };
+
+  const speakBarcodeAnalysisResults = (result: AnalyzeBarcodeOutput | null) => {
+    if (result && result.isFound && typeof window !== 'undefined' && window.speechSynthesis) {
+      let textToSpeak = `Product: ${result.productName || 'Unknown product'}. `;
+      if (result.brand && result.brand !== 'N/A') {
+        textToSpeak += `Brand: ${result.brand}. `;
+      }
+      if (result.overallAssessment) {
+        textToSpeak += `Overall assessment: ${result.overallAssessment}. `;
+      } else {
+        textToSpeak += "No overall assessment available. ";
+      }
+      if (result.potentialConcerns && result.potentialConcerns.length > 0) {
+          const firstConcern = result.potentialConcerns[0].concern;
+          if(firstConcern) {
+            textToSpeak += `Primary concern noted: ${firstConcern}. `;
+          }
+      }
+  
       const utterance = new SpeechSynthesisUtterance(textToSpeak);
       utterance.lang = 'en-US';
       if (selectedVoice) {
@@ -366,6 +394,9 @@ export default function ScanPageClient() {
     try {
       const result = await analyzeBarcode({ barcodeNumber: barcodeInputValue.trim() });
       setBarcodeAnalysisResult(result);
+      if(result.isFound){
+        speakBarcodeAnalysisResults(result);
+      }
     } catch (err) {
       console.error("Barcode analysis error:", err);
       const errorMessage = err instanceof Error ? err.message : "An unknown error occurred during barcode analysis.";
@@ -518,7 +549,7 @@ export default function ScanPageClient() {
                         <CardTitle className="font-headline text-2xl md:text-3xl text-primary flex items-center gap-3">
                             <Package size={30} /> {analysisResult.identification.name || "Food Item"}
                         </CardTitle>
-                        <Button variant="ghost" size="icon" onClick={() => speakResults(analysisResult)} title="Read results aloud" className="text-foreground/70 hover:text-primary hover:bg-primary/10">
+                        <Button variant="ghost" size="icon" onClick={() => speakImageScanAnalysisResults(analysisResult)} title="Read results aloud" className="text-foreground/70 hover:text-primary hover:bg-primary/10">
                             <Mic className="h-6 w-6" />
                         </Button>
                         </div>
@@ -686,11 +717,18 @@ export default function ScanPageClient() {
                                     </div>
                                 )}
                                 <div className="flex-1">
-                                    <CardTitle className="font-headline text-2xl md:text-3xl text-primary flex items-center gap-2">
-                                        <Tag size={30} /> {barcodeAnalysisResult.productName || "Product"}
-                                    </CardTitle>
-                                    {barcodeAnalysisResult.brand && <CardDescription className="pt-1 text-base text-muted-foreground flex items-center gap-2"><Building size={16}/>{barcodeAnalysisResult.brand}</CardDescription>}
-                                     {barcodeAnalysisResult.source && <CardDescription className="pt-1 text-xs text-muted-foreground/70">Data from: {barcodeAnalysisResult.source}</CardDescription>}
+                                  <div className="flex justify-between items-start">
+                                    <div>
+                                      <CardTitle className="font-headline text-2xl md:text-3xl text-primary flex items-center gap-2">
+                                          <Tag size={30} /> {barcodeAnalysisResult.productName || "Product"}
+                                      </CardTitle>
+                                      {barcodeAnalysisResult.brand && <CardDescription className="pt-1 text-base text-muted-foreground flex items-center gap-2"><Building size={16}/>{barcodeAnalysisResult.brand}</CardDescription>}
+                                    </div>
+                                    <Button variant="ghost" size="icon" onClick={() => speakBarcodeAnalysisResults(barcodeAnalysisResult)} title="Read barcode results aloud" className="text-foreground/70 hover:text-primary hover:bg-primary/10">
+                                        <Mic className="h-6 w-6" />
+                                    </Button>
+                                  </div>
+                                  {barcodeAnalysisResult.source && <CardDescription className="pt-1 text-xs text-muted-foreground/70">Data from: {barcodeAnalysisResult.source}</CardDescription>}
                                 </div>
                             </div>
                         </CardHeader>
@@ -747,3 +785,6 @@ export default function ScanPageClient() {
     </Card>
   );
 }
+
+
+    
