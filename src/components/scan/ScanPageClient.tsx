@@ -64,9 +64,44 @@ export default function ScanPageClient() {
   const [isBarcodeLoading, setIsBarcodeLoading] = useState(false);
   const [barcodeError, setBarcodeError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("image-scan");
+  const [selectedVoice, setSelectedVoice] = useState<SpeechSynthesisVoice | null>(null);
 
 
   const { toast } = useToast();
+
+  useEffect(() => {
+    const populateVoiceList = () => {
+      if (typeof window !== 'undefined' && window.speechSynthesis) {
+        const voices = window.speechSynthesis.getVoices();
+        if (voices.length > 0) {
+          const maleEnglishVoice = voices.find(voice => 
+            voice.lang.startsWith('en-') && 
+            (voice.name.toLowerCase().includes('male') ||
+             voice.name.toLowerCase().includes('david') ||
+             voice.name.toLowerCase().includes('mark') ||
+             voice.name.toLowerCase().includes('paul') ||
+             voice.name.toLowerCase().includes('james') ||
+             voice.name.toLowerCase().includes('tom') ||
+             voice.name.toLowerCase().includes('alex') ||
+             voice.name.toLowerCase().includes('daniel') ||
+             voice.name.toLowerCase().includes('microsoft david') ||
+             voice.name.toLowerCase().includes('google us english male'))
+          );
+          setSelectedVoice(maleEnglishVoice || voices.find(v => v.lang.startsWith('en-')) || voices[0]); // Fallback
+        }
+      }
+    };
+
+    populateVoiceList();
+    if (typeof window !== 'undefined' && window.speechSynthesis && window.speechSynthesis.onvoiceschanged !== undefined) {
+      window.speechSynthesis.onvoiceschanged = populateVoiceList;
+    }
+    return () => {
+       if (typeof window !== 'undefined' && window.speechSynthesis) {
+        window.speechSynthesis.onvoiceschanged = null;
+       }
+    }
+  }, []);
 
   const stopCamera = () => {
     if (streamRef.current) {
@@ -84,7 +119,7 @@ export default function ScanPageClient() {
     let isMounted = true;
 
     const startCameraWithMode = async (mode: 'user' | 'environment') => {
-      stopCamera(); // Ensure any existing stream is stopped first
+      stopCamera(); 
 
       if (!videoRef.current) {
         if (isMounted) setHasCameraPermission(false);
@@ -96,7 +131,7 @@ export default function ScanPageClient() {
         const stream = await navigator.mediaDevices.getUserMedia({ 
           video: { 
             facingMode: mode,
-            width: { ideal: 1280 }, // Optional: request higher resolution
+            width: { ideal: 1280 }, 
             height: { ideal: 720 } 
           } 
         });
@@ -150,9 +185,9 @@ export default function ScanPageClient() {
     };
     
     if (activeTab === "image-scan" && !imagePreview) {
-        if (hasCameraPermission === null || (hasCameraPermission === true && (!streamRef.current || !streamRef.current.active))) {
-             startCameraWithMode(currentFacingMode);
-        }
+      if (hasCameraPermission === null || (hasCameraPermission === true && (!streamRef.current || !streamRef.current.active))) {
+        startCameraWithMode(currentFacingMode);
+      }
     } else {
       stopCamera();
     }
@@ -192,7 +227,7 @@ export default function ScanPageClient() {
     const context = canvas.getContext('2d');
     if (context) {
       context.drawImage(video, 0, 0, canvas.width, canvas.height);
-      const dataUri = canvas.toDataURL('image/webp'); // Using webp for better compression
+      const dataUri = canvas.toDataURL('image/webp'); 
       setImageDataUri(dataUri);
       setImagePreview(dataUri);
       setAnalysisResult(null);
@@ -216,7 +251,7 @@ export default function ScanPageClient() {
         setImagePreview(dataUri);
         setAnalysisResult(null);
         setError(null);
-        setHasCameraPermission(false); // We are no longer using live camera
+        setHasCameraPermission(false); 
       };
       reader.readAsDataURL(file);
     }
@@ -234,15 +269,13 @@ export default function ScanPageClient() {
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
-    // Resetting hasCameraPermission to null will trigger useEffect to re-attempt camera start
     setHasCameraPermission(null); 
   };
 
   const handleSwitchCamera = () => {
     setCurrentFacingMode(prevMode => prevMode === 'environment' ? 'user' : 'environment');
-    // Setting hasCameraPermission to null will cause the useEffect to re-evaluate and attempt to start the camera with the new mode.
     setHasCameraPermission(null); 
-    setImagePreview(null); // Ensure we are in camera view mode
+    setImagePreview(null); 
     setAnalysisResult(null);
     setError(null);
   };
@@ -301,6 +334,9 @@ export default function ScanPageClient() {
       
       const utterance = new SpeechSynthesisUtterance(textToSpeak);
       utterance.lang = 'en-US';
+      if (selectedVoice) {
+        utterance.voice = selectedVoice;
+      }
       window.speechSynthesis.cancel(); 
       window.speechSynthesis.speak(utterance);
     }
@@ -409,7 +445,7 @@ export default function ScanPageClient() {
                   <Button onClick={handleCaptureImage} disabled={isLoading || hasCameraPermission !== true} className="bg-accent hover:bg-accent/90 text-accent-foreground w-full sm:w-auto text-base py-2.5 px-6 transition-all duration-150 ease-in-out shadow-md hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:brightness-90">
                     <Camera className="mr-2 h-5 w-5" /> Capture Image
                   </Button>
-                  {hasCameraPermission !== false && ( // Show switch camera if permission not explicitly false
+                  {hasCameraPermission !== false && ( 
                      <Button onClick={handleSwitchCamera} variant="outline" className="w-full sm:w-auto text-base py-2.5 px-6 border-primary/70 text-primary hover:bg-primary/10 transition-all duration-150 ease-in-out shadow-md hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:brightness-90">
                        <SwitchCamera className="mr-2 h-5 w-5" /> Switch Camera
                      </Button>
