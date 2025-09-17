@@ -90,7 +90,6 @@ const fetchProductInfoByBarcodeTool = ai.defineTool(
       const productName = product.product_name_en || product.product_name || 'N/A';
       const ingredientsString = product.ingredients_text_en || product.ingredients_text || '';
       
-      // Simpler, more robust ingredient parsing
       const ingredientsArray = ingredientsString
           .replace(/_/g, '') // remove underscores
           .split(/[,;]\s*/) // split by comma or semicolon followed by optional space
@@ -199,4 +198,3 @@ const analyzeBarcodeFlow = ai.defineFlow(
     }
   }
 );
-
