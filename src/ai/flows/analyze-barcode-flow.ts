@@ -150,10 +150,6 @@ Product Name: {{{productInfo.productName}}}
 Brand: {{{productInfo.brand}}}
 Ingredients: {{#if productInfo.ingredients.length}}{{#each productInfo.ingredients}}- {{{this}}}\n{{/each}}{{else}}Not listed.{{/if}}
 Declared Allergens: {{#if productInfo.allergens.length}}{{#each productInfo.allergens}}- {{{this}}}\n{{/each}}{{else}}None listed.{{/if}}
-Data Source: {{{productInfo.source}}}
-Image URL: {{{productInfo.imageUrl}}}
-Is Found: {{{productInfo.isFound}}}
-
 
 Based ONLY on the ingredients list and declared allergens provided above:
 1.  Identify any potential concerns. For each concern, provide a brief 'concern' title and optional 'details'.
@@ -167,8 +163,6 @@ IMPORTANT: Your primary role is to provide the 'potentialConcerns' and 'overallA
 You MUST preserve ALL other fields from the input 'productInfo' object (productName, brand, ingredients, allergens, isFound, imageUrl, source) and include them verbatim in your output.
 Your response structure MUST exactly match the AnalyzeBarcodeOutputSchema.
 
-If the 'productInfo.isFound' field is false, or if the 'productInfo.ingredients' list is empty or not listed, your 'potentialConcerns' should be an empty array, and the 'overallAssessment' should state that analysis cannot be performed due to missing ingredient data.
-In this specific case (not found or no ingredients), you must still return all other fields from 'productInfo' as they were provided to you.
 Do not invent information not present in the provided product details. Focus on objective analysis of the ingredients.
 `,
 });
@@ -180,46 +174,55 @@ const analyzeBarcodeFlow = ai.defineFlow(
     outputSchema: AnalyzeBarcodeOutputSchema,
   },
   async (flowInput): Promise<AnalyzeBarcodeOutput> => {
+    // Step 1: Fetch product info from the Open Food Facts API tool.
     const productInfoFromTool = await fetchProductInfoByBarcodeTool(flowInput);
 
-    // If the tool says product not found, or if ingredients are missing (even if found),
-    // return the tool's assessment directly. The AI prompt is designed to handle this.
-    // The AI will still be called to ensure the output structure is consistent and to state that analysis cannot be performed.
+    // Step 2: If the product wasn't found or has no ingredients, return the tool's result directly.
+    // This is more efficient and prevents calling the AI with no data to analyze.
+    if (!productInfoFromTool.isFound || !productInfoFromTool.ingredients || productInfoFromTool.ingredients.length === 0) {
+      console.log("Product not found or no ingredients. Skipping AI analysis.");
+      return {
+        ...productInfoFromTool,
+        overallAssessment: productInfoFromTool.isFound 
+          ? "Product information was found, but ingredient data is missing. Analysis cannot be performed."
+          : productInfoFromTool.overallAssessment, // Use original "not found" message
+      };
+    }
 
     try {
-      // Call the AI to get potentialConcerns and overallAssessment,
-      // and to ensure the full structure including original data is returned.
+      // Step 3: If product is found and has ingredients, call the AI for analysis.
       const {output: aiAnalysisResult} = await prompt({ productInfo: productInfoFromTool });
 
       if (aiAnalysisResult) {
-        // The AI is expected to return the full structure.
-        // We just ensure critical fields like isFound, which AI shouldn't alter, are from the tool.
+        // Step 4: Reliably merge the AI's analysis with the factual data from the tool.
+        // This ensures the original data from the database is preserved.
         return {
-            ...aiAnalysisResult,
+            // Factual data from the tool is the source of truth
             isFound: productInfoFromTool.isFound,
-            productName: productInfoFromTool.productName || aiAnalysisResult.productName,
-            brand: productInfoFromTool.brand || aiAnalysisResult.brand,
-            ingredients: productInfoFromTool.ingredients && productInfoFromTool.ingredients.length > 0 ? productInfoFromTool.ingredients : aiAnalysisResult.ingredients,
-            allergens: productInfoFromTool.allergens && productInfoFromTool.allergens.length > 0 ? productInfoFromTool.allergens : aiAnalysisResult.allergens,
-            imageUrl: productInfoFromTool.imageUrl || aiAnalysisResult.imageUrl,
-            source: productInfoFromTool.source || aiAnalysisResult.source,
+            productName: productInfoFromTool.productName,
+            brand: productInfoFromTool.brand,
+            ingredients: productInfoFromTool.ingredients,
+            allergens: productInfoFromTool.allergens,
+            imageUrl: productInfoFromTool.imageUrl,
+            source: productInfoFromTool.source,
+
+            // Analytical data from the AI
+            potentialConcerns: aiAnalysisResult.potentialConcerns || [],
+            overallAssessment: aiAnalysisResult.overallAssessment || "AI analysis of ingredients could not be completed.",
         };
       } else {
-        // AI analysis failed or returned no structured output.
-        // Fallback to tool's data with a note about analysis failure.
+        // Fallback in case the AI fails to return a structured output.
         console.warn("AI analysis for barcode returned no structured output. Product details from tool will be used.");
         return {
-          ...productInfoFromTool, // Spread all fields from the tool
-          potentialConcerns: productInfoFromTool.potentialConcerns || [], // Ensure it's an array
-          overallAssessment: productInfoFromTool.overallAssessment || "Product details retrieved, but AI analysis of ingredients could not be completed.",
+          ...productInfoFromTool,
+          overallAssessment: "Product details retrieved, but AI analysis of ingredients could not be completed.",
         };
       }
     } catch (e) {
         console.error("Error during AI prompt call for barcode analysis:", e);
-        // In case of error during AI call, return the tool's data with an error message for assessment.
+        // Fallback in case of a catastrophic error during the AI call.
         return {
-          ...productInfoFromTool, // Spread all fields from the tool
-          potentialConcerns: productInfoFromTool.potentialConcerns || [], // Ensure it's an array
+          ...productInfoFromTool,
           overallAssessment: "An error occurred during AI analysis of ingredients. Product details shown, but please review ingredients manually.",
         };
     }
