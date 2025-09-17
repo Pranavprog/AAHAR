@@ -47,13 +47,12 @@ const fetchProductInfoByBarcodeTool = ai.defineTool(
   },
   async (input): Promise<AnalyzeBarcodeOutput> => {
     const { barcodeNumber } = input;
-    // Request specific fields to keep response size manageable
     const apiUrl = `https://world.openfoodfacts.org/api/v2/product/${barcodeNumber}.json?fields=product_name,brands,ingredients_text,allergens_tags,image_url,product_name_en,ingredients_text_en`;
 
     try {
       const response = await fetch(apiUrl, {
         headers: {
-          'User-Agent': 'ScanBiteApp/1.0 (Firebase Studio Prototype; +https://your-app-url-or-contact.com)', // Be a good API citizen
+          'User-Agent': 'ScanBiteApp/1.0 (Firebase Studio Prototype; +https://your-app-url-or-contact.com)', 
         }
       });
 
@@ -88,20 +87,14 @@ const fetchProductInfoByBarcodeTool = ai.defineTool(
       }
 
       const product = data.product;
-      // Prefer English names if available, fallback to default product_name
       const productName = product.product_name_en || product.product_name || 'N/A';
-      // Prefer English ingredients text if available
       const ingredientsString = product.ingredients_text_en || product.ingredients_text || '';
       
-      // Basic split for ingredients. This can be complex due to nested ingredients, percentages, etc.
-      // A more robust parser might be needed for production.
       const ingredientsArray = ingredientsString
-        .split(/[,;](?![^(]*\))(?![^[]*\])/g) // Split by comma or semicolon, respecting parentheses and brackets
-        .map(ing => ing.replace(/_/g, '').trim()) // Remove underscores used in OFF and trim
+        .split(/[,;](?![^(]*\))(?![^[]*\])/g) 
+        .map(ing => ing.replace(/_/g, '').trim()) 
         .filter(ing => ing);
 
-
-      // Allergens from Open Food Facts are often prefixed (e.g., "en:nuts"). Strip prefixes.
       const allergensArray = (product.allergens_tags || [])
         .map((tag: string) => tag.replace(/^[a-z]{2}:/, '').replace(/-/g, ' ').trim())
         .filter(allergen => allergen);
@@ -112,8 +105,6 @@ const fetchProductInfoByBarcodeTool = ai.defineTool(
         brand: product.brands || 'N/A',
         ingredients: ingredientsArray.length > 0 ? ingredientsArray : (ingredientsString ? [ingredientsString] : []),
         allergens: allergensArray,
-        potentialConcerns: [], // To be filled by AI
-        overallAssessment: '',   // To be filled by AI
         imageUrl: product.image_url || undefined,
         source: 'Open Food Facts API',
       };
@@ -139,31 +130,28 @@ export async function analyzeBarcode(input: AnalyzeBarcodeInput): Promise<Analyz
 }
 
 const prompt = ai.definePrompt({
-  name: 'analyzeBarcodePrompt',
-  input: { schema: z.object({ productInfo: AnalyzeBarcodeOutputSchema }) }, 
-  output: { schema: AnalyzeBarcodeOutputSchema }, 
+  name: 'analyzeBarcodeIngredientsPrompt',
+  input: { schema: z.object({ ingredients: z.array(z.string()) }) }, 
+  output: { schema: z.object({
+    potentialConcerns: AnalyzeBarcodeOutputSchema.shape.potentialConcerns,
+    overallAssessment: AnalyzeBarcodeOutputSchema.shape.overallAssessment
+  })},
   tools: [],
-  prompt: `You are an AI assistant specialized in analyzing packaged food items based on their ingredients and declared allergens.
-You have been provided with product information fetched from a database.
+  prompt: `You are an AI assistant specialized in analyzing packaged food items based on their ingredients list.
 
-Product Name: {{{productInfo.productName}}}
-Brand: {{{productInfo.brand}}}
-Ingredients: {{#if productInfo.ingredients.length}}{{#each productInfo.ingredients}}- {{{this}}}\n{{/each}}{{else}}Not listed.{{/if}}
-Declared Allergens: {{#if productInfo.allergens.length}}{{#each productInfo.allergens}}- {{{this}}}\n{{/each}}{{else}}None listed.{{/if}}
+You have been provided with a list of ingredients.
+Ingredients: 
+{{#each ingredients}}- {{{this}}}\n{{/each}}
 
-Based ONLY on the ingredients list and declared allergens provided above:
+Based ONLY on this ingredients list:
 1.  Identify any potential concerns. For each concern, provide a brief 'concern' title and optional 'details'.
-    Examples of concerns: "High Sugar Content", "Contains Artificial Sweeteners", "Multiple Preservatives", "Common Allergen Present (e.g., gluten if wheat is an ingredient, even if not explicitly in declared allergens)".
+    Examples of concerns: "High Sugar Content", "Contains Artificial Sweeteners", "Multiple Preservatives", "Contains Artificial Colors".
     Be specific. For example, if 'Aspartame' is an ingredient, a concern could be "Contains Artificial Sweetener: Aspartame".
     If sugar or corn syrup are among the first few ingredients, note "High Sugar Content" or "Sweetened with Corn Syrup".
-    If Red 40, Yellow 5, etc., are present, note "Contains Artificial Colors".
 2.  Provide a brief 'overallAssessment' of the product from a health-conscious perspective, focusing on the ingredients.
 
-IMPORTANT: Your primary role is to provide the 'potentialConcerns' and 'overallAssessment' fields.
-You MUST preserve ALL other fields from the input 'productInfo' object (productName, brand, ingredients, allergens, isFound, imageUrl, source) and include them verbatim in your output.
-Your response structure MUST exactly match the AnalyzeBarcodeOutputSchema.
-
-Do not invent information not present in the provided product details. Focus on objective analysis of the ingredients.
+IMPORTANT: Your response MUST only contain the 'potentialConcerns' and 'overallAssessment' fields.
+Do not invent information not present in the provided ingredients list. Focus on objective analysis.
 `,
 });
 
@@ -175,56 +163,38 @@ const analyzeBarcodeFlow = ai.defineFlow(
   },
   async (flowInput): Promise<AnalyzeBarcodeOutput> => {
     // Step 1: Fetch product info from the Open Food Facts API tool.
-    const productInfoFromTool = await fetchProductInfoByBarcodeTool(flowInput);
+    const productInfo = await fetchProductInfoByBarcodeTool(flowInput);
 
     // Step 2: If the product wasn't found or has no ingredients, return the tool's result directly.
-    // This is more efficient and prevents calling the AI with no data to analyze.
-    if (!productInfoFromTool.isFound || !productInfoFromTool.ingredients || productInfoFromTool.ingredients.length === 0) {
+    if (!productInfo.isFound || !productInfo.ingredients || productInfo.ingredients.length === 0) {
       console.log("Product not found or no ingredients. Skipping AI analysis.");
       return {
-        ...productInfoFromTool,
-        overallAssessment: productInfoFromTool.isFound 
+        ...productInfo,
+        overallAssessment: productInfo.isFound 
           ? "Product information was found, but ingredient data is missing. Analysis cannot be performed."
-          : productInfoFromTool.overallAssessment, // Use original "not found" message
+          : productInfo.overallAssessment, // Use original "not found" message
       };
     }
 
     try {
-      // Step 3: If product is found and has ingredients, call the AI for analysis.
-      const {output: aiAnalysisResult} = await prompt({ productInfo: productInfoFromTool });
+      // Step 3: Call the AI for analysis with only the ingredients.
+      const {output: aiAnalysisResult} = await prompt({ ingredients: productInfo.ingredients });
 
-      if (aiAnalysisResult) {
-        // Step 4: Reliably merge the AI's analysis with the factual data from the tool.
-        // This ensures the original data from the database is preserved.
-        return {
-            // Factual data from the tool is the source of truth
-            isFound: productInfoFromTool.isFound,
-            productName: productInfoFromTool.productName,
-            brand: productInfoFromTool.brand,
-            ingredients: productInfoFromTool.ingredients,
-            allergens: productInfoFromTool.allergens,
-            imageUrl: productInfoFromTool.imageUrl,
-            source: productInfoFromTool.source,
+      // Step 4: Reliably merge the AI's analysis with the factual data from the tool.
+      return {
+          ...productInfo, // The source of truth for product data
+          potentialConcerns: aiAnalysisResult?.potentialConcerns || [], // Add AI analysis
+          overallAssessment: aiAnalysisResult?.overallAssessment || "AI analysis of ingredients could not be completed.", // Add AI analysis
+      };
 
-            // Analytical data from the AI
-            potentialConcerns: aiAnalysisResult.potentialConcerns || [],
-            overallAssessment: aiAnalysisResult.overallAssessment || "AI analysis of ingredients could not be completed.",
-        };
-      } else {
-        // Fallback in case the AI fails to return a structured output.
-        console.warn("AI analysis for barcode returned no structured output. Product details from tool will be used.");
-        return {
-          ...productInfoFromTool,
-          overallAssessment: "Product details retrieved, but AI analysis of ingredients could not be completed.",
-        };
-      }
     } catch (e) {
         console.error("Error during AI prompt call for barcode analysis:", e);
         // Fallback in case of a catastrophic error during the AI call.
         return {
-          ...productInfoFromTool,
+          ...productInfo,
           overallAssessment: "An error occurred during AI analysis of ingredients. Product details shown, but please review ingredients manually.",
         };
     }
   }
 );
+
