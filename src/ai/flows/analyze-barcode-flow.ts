@@ -65,7 +65,7 @@ const fetchProductInfoByBarcodeTool = ai.defineTool(
           ingredients: [],
           allergens: [],
           potentialConcerns: [],
-          overallAssessment: `Could not retrieve information from Open Food Facts. API returned status ${response.status}.`,
+          overallAssessment: `Could not retrieve information from Open Food Facts. The API returned status ${response.status}. This could be due to an invalid barcode or a temporary issue with the service.`,
           source: 'Open Food Facts API',
         };
       }
@@ -81,7 +81,7 @@ const fetchProductInfoByBarcodeTool = ai.defineTool(
           ingredients: [],
           allergens: [],
           potentialConcerns: [],
-          overallAssessment: 'Product information not found in the Open Food Facts database for this barcode.',
+          overallAssessment: 'Product information not found in the Open Food Facts database for this barcode. Please check if the number is correct.',
           source: 'Open Food Facts API',
         };
       }
@@ -90,7 +90,6 @@ const fetchProductInfoByBarcodeTool = ai.defineTool(
       const productName = product.product_name_en || product.product_name || 'N/A';
       const ingredientsString = product.ingredients_text_en || product.ingredients_text || '';
       
-      // Improved ingredient parsing
       const ingredientsArray = ingredientsString
         .split(/[,;](?![^(]*\))(?![^[]*\])/g) 
         .map(ing => ing.replace(/_/g, '').trim()) 
@@ -119,7 +118,7 @@ const fetchProductInfoByBarcodeTool = ai.defineTool(
         ingredients: [],
         allergens: [],
         potentialConcerns: [],
-        overallAssessment: 'An error occurred while trying to fetch product information from Open Food Facts.',
+        overallAssessment: 'An error occurred while trying to fetch product information from Open Food Facts. Please check your internet connection.',
         source: 'Open Food Facts API (Error)',
       };
     }
@@ -173,7 +172,7 @@ const analyzeBarcodeFlow = ai.defineFlow(
         ...productInfo,
         overallAssessment: productInfo.isFound 
           ? "Product information was found, but ingredient data is missing. Analysis cannot be performed."
-          : productInfo.overallAssessment, // Use original "not found" message
+          : productInfo.overallAssessment, // Use original "not found" or error message from the tool
       };
     }
 
