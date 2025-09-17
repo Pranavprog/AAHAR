@@ -52,7 +52,7 @@ const fetchProductInfoByBarcodeTool = ai.defineTool(
     try {
       const response = await fetch(apiUrl, {
         headers: {
-          'User-Agent': 'ScanBiteApp/1.0 (Firebase Studio Prototype; +https://your-app-url-or-contact.com)', 
+          'User-Agent': 'AAHAR-Food-Analysis-App/1.0 (Firebase Studio; contact: no-reply@example.com) - Product Data powered by Open Food Facts - https://world.openfoodfacts.org/', 
         }
       });
 
@@ -90,6 +90,7 @@ const fetchProductInfoByBarcodeTool = ai.defineTool(
       const productName = product.product_name_en || product.product_name || 'N/A';
       const ingredientsString = product.ingredients_text_en || product.ingredients_text || '';
       
+      // Improved ingredient parsing
       const ingredientsArray = ingredientsString
         .split(/[,;](?![^(]*\))(?![^[]*\])/g) 
         .map(ing => ing.replace(/_/g, '').trim()) 
@@ -197,4 +198,3 @@ const analyzeBarcodeFlow = ai.defineFlow(
     }
   }
 );
-
