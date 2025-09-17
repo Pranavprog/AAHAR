@@ -3,6 +3,7 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import Header from '@/components/layout/Header';
 import { cn } from '@/lib/utils';
+import TargetCursor from '@/components/ui/TargetCursor';
 
 export const metadata: Metadata = {
   title: 'AAHAR - AI Food Analysis',
@@ -22,6 +23,7 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
       </head>
       <body className={cn("font-body antialiased min-h-screen flex flex-col")}>
+        <TargetCursor />
         <Header />
         <main className="flex-grow container mx-auto px-4 py-8">
           {children}

@@ -48,7 +48,7 @@ export default function HomePage() {
           <Button
             size="lg"
             asChild
-            className="bg-accent hover:bg-accent/90 text-accent-foreground text-lg py-3 px-8 transition-all duration-200 ease-in-out shadow-lg hover:scale-105 hover:-translate-y-0.5 hover:shadow-xl active:scale-100 active:translate-y-0 active:brightness-90"
+            className="cursor-target bg-accent hover:bg-accent/90 text-accent-foreground text-lg py-3 px-8 transition-all duration-200 ease-in-out shadow-lg hover:scale-105 hover:-translate-y-0.5 hover:shadow-xl active:scale-100 active:translate-y-0 active:brightness-90"
           >
             <Link href="/scan">
               <ScanLine className="mr-2 h-6 w-6" />
@@ -64,7 +64,7 @@ export default function HomePage() {
           <Dialog>
             <DialogTrigger asChild>
               <ElectricBorder color="hsl(var(--primary))" speed={1} chaos={0.6} thickness={2} style={{ borderRadius: '0.75rem' }}>
-                <Card className="shadow-lg group hover:scale-[1.02] transition-transform duration-300 ease-in-out cursor-pointer bg-card/80 backdrop-blur-sm h-full w-full">
+                <Card className="shadow-lg group hover:scale-[1.02] transition-transform duration-300 ease-in-out cursor-target bg-card/80 backdrop-blur-sm h-full w-full">
                   <CardHeader>
                     <div className="p-3 bg-primary/20 rounded-full w-fit mb-4 group-hover:scale-110 transition-transform duration-300 ease-in-out">
                       <ScanLine className="h-10 w-10 text-primary" />
@@ -110,7 +110,7 @@ export default function HomePage() {
           <Dialog>
             <DialogTrigger asChild>
               <ElectricBorder color="hsl(var(--primary))" speed={1} chaos={0.6} thickness={2} style={{ borderRadius: '0.75rem' }}>
-                <Card className="shadow-lg group hover:scale-[1.02] transition-transform duration-300 ease-in-out cursor-pointer bg-card/80 backdrop-blur-sm h-full w-full">
+                <Card className="shadow-lg group hover:scale-[1.02] transition-transform duration-300 ease-in-out cursor-target bg-card/80 backdrop-blur-sm h-full w-full">
                   <CardHeader>
                     <div className="p-3 bg-primary/20 rounded-full w-fit mb-4 group-hover:scale-110 transition-transform duration-300 ease-in-out">
                       <Barcode className="h-10 w-10 text-primary" />
@@ -156,7 +156,7 @@ export default function HomePage() {
           <Dialog>
             <DialogTrigger asChild>
               <ElectricBorder color="hsl(var(--primary))" speed={1} chaos={0.6} thickness={2} style={{ borderRadius: '0.75rem' }}>
-                <Card className="shadow-lg group hover:scale-[1.02] transition-transform duration-300 ease-in-out cursor-pointer bg-card/80 backdrop-blur-sm h-full w-full">
+                <Card className="shadow-lg group hover:scale-[1.02] transition-transform duration-300 ease-in-out cursor-target bg-card/80 backdrop-blur-sm h-full w-full">
                   <CardHeader>
                     <div className="p-3 bg-primary/20 rounded-full w-fit mb-4 group-hover:scale-110 transition-transform duration-300 ease-in-out">
                       <Layers className="h-10 w-10 text-primary"/>
@@ -203,7 +203,7 @@ export default function HomePage() {
           <Dialog>
             <DialogTrigger asChild>
               <ElectricBorder color="hsl(var(--primary))" speed={1} chaos={0.6} thickness={2} style={{ borderRadius: '0.75rem' }}>
-                <Card className="shadow-lg group hover:scale-[1.02] transition-transform duration-300 ease-in-out cursor-pointer bg-card/80 backdrop-blur-sm h-full w-full">
+                <Card className="shadow-lg group hover:scale-[1.02] transition-transform duration-300 ease-in-out cursor-target bg-card/80 backdrop-blur-sm h-full w-full">
                   <CardHeader>
                     <div className="p-3 bg-primary/20 rounded-full w-fit mb-4 group-hover:scale-110 transition-transform duration-300 ease-in-out">
                       <Lightbulb className="h-10 w-10 text-primary" />
@@ -256,7 +256,7 @@ export default function HomePage() {
           <Button
             variant="outline"
             asChild
-            className="transition-all duration-200 ease-in-out border-primary/70 text-primary hover:bg-primary/10 hover:text-primary shadow-md hover:scale-105 hover:-translate-y-0.5 hover:shadow-lg active:scale-100 active:translate-y-0 active:brightness-90"
+            className="cursor-target transition-all duration-200 ease-in-out border-primary/70 text-primary hover:bg-primary/10 hover:text-primary shadow-md hover:scale-105 hover:-translate-y-0.5 hover:shadow-lg active:scale-100 active:translate-y-0 active:brightness-90"
           >
             <Link href="/tips">
               View All Tips

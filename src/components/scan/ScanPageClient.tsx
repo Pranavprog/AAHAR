@@ -475,25 +475,25 @@ export default function ScanPageClient() {
               <div className="flex flex-col sm:flex-row flex-wrap justify-center items-center gap-4 mt-6">
                 {!imagePreview && (
                   <>
-                    <Button onClick={handleCaptureImage} disabled={isLoading || hasCameraPermission !== true} className="bg-accent hover:bg-accent/90 text-accent-foreground w-full sm:w-auto text-base py-2.5 px-6 transition-all duration-150 ease-in-out shadow-md hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:brightness-90">
+                    <Button onClick={handleCaptureImage} disabled={isLoading || hasCameraPermission !== true} className="cursor-target bg-accent hover:bg-accent/90 text-accent-foreground w-full sm:w-auto text-base py-2.5 px-6 transition-all duration-150 ease-in-out shadow-md hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:brightness-90">
                       <Camera className="mr-2 h-5 w-5" /> Capture Image
                     </Button>
                     {hasCameraPermission !== false && ( 
-                       <Button onClick={handleSwitchCamera} variant="outline" className="w-full sm:w-auto text-base py-2.5 px-6 border-primary/70 text-primary hover:bg-primary/10 transition-all duration-150 ease-in-out shadow-md hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:brightness-90">
+                       <Button onClick={handleSwitchCamera} variant="outline" className="cursor-target w-full sm:w-auto text-base py-2.5 px-6 border-primary/70 text-primary hover:bg-primary/10 transition-all duration-150 ease-in-out shadow-md hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:brightness-90">
                          <SwitchCamera className="mr-2 h-5 w-5" /> Switch Camera
                        </Button>
                     )}
-                    <Button onClick={() => fileInputRef.current?.click()} variant="outline" disabled={isLoading} className="w-full sm:w-auto text-base py-2.5 px-6 border-primary/70 text-primary hover:bg-primary/10 transition-all duration-150 ease-in-out shadow-md hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:brightness-90">
+                    <Button onClick={() => fileInputRef.current?.click()} variant="outline" disabled={isLoading} className="cursor-target w-full sm:w-auto text-base py-2.5 px-6 border-primary/70 text-primary hover:bg-primary/10 transition-all duration-150 ease-in-out shadow-md hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:brightness-90">
                       <Upload className="mr-2 h-5 w-5" /> Upload Image File
                     </Button>
                   </>
                 )}
                 {imagePreview && (
                   <>
-                    <Button onClick={handleAnalyze} disabled={isLoading || !imageDataUri} className="bg-primary hover:bg-primary/90 w-full sm:w-auto text-base py-2.5 px-6 transition-all duration-150 ease-in-out shadow-md hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:brightness-90">
+                    <Button onClick={handleAnalyze} disabled={isLoading || !imageDataUri} className="cursor-target bg-primary hover:bg-primary/90 w-full sm:w-auto text-base py-2.5 px-6 transition-all duration-150 ease-in-out shadow-md hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:brightness-90">
                       <Zap className="mr-2 h-5 w-5" /> Analyze Image
                     </Button>
-                    <Button onClick={handleRetake} variant="outline" disabled={isLoading} className="w-full sm:w-auto text-base py-2.5 px-6 transition-all duration-150 ease-in-out shadow-md hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:brightness-90">
+                    <Button onClick={handleRetake} variant="outline" disabled={isLoading} className="cursor-target w-full sm:w-auto text-base py-2.5 px-6 transition-all duration-150 ease-in-out shadow-md hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:brightness-90">
                       Scan Another
                     </Button>
                   </>
@@ -544,7 +544,7 @@ export default function ScanPageClient() {
                                 <p className="text-sm text-muted-foreground mt-2">AAHAR is designed for food analysis. Please scan a food item.</p>
                             </CardContent>
                             <CardFooter className="border-t border-border/50 pt-6">
-                                <Button variant="outline" onClick={handleRetake} className="text-base py-2.5 px-6 transition-all duration-150 ease-in-out shadow-md hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:brightness-90">Scan Another Item</Button>
+                                <Button variant="outline" onClick={handleRetake} className="cursor-target text-base py-2.5 px-6 transition-all duration-150 ease-in-out shadow-md hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:brightness-90">Scan Another Item</Button>
                             </CardFooter>
                         </Card>
                       </ElectricBorder>
@@ -556,7 +556,7 @@ export default function ScanPageClient() {
                             <CardTitle className="font-headline text-2xl md:text-3xl text-primary flex items-center gap-3">
                                 <Package size={30} /> {analysisResult.identification.name || "Food Item"}
                             </CardTitle>
-                            <Button variant="ghost" size="icon" onClick={() => speakImageScanAnalysisResults(analysisResult)} title="Read results aloud" className="text-foreground/70 hover:text-primary hover:bg-primary/10">
+                            <Button variant="ghost" size="icon" onClick={() => speakImageScanAnalysisResults(analysisResult)} title="Read results aloud" className="cursor-target text-foreground/70 hover:text-primary hover:bg-primary/10">
                                 <Mic className="h-6 w-6" />
                             </Button>
                             </div>
@@ -633,7 +633,7 @@ export default function ScanPageClient() {
                             )}
                         </CardContent>
                         <CardFooter className="border-t border-border/50 pt-6">
-                            <Button variant="outline" onClick={handleRetake} className="text-base py-2.5 px-6 transition-all duration-150 ease-in-out shadow-md hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:brightness-90">Scan Another Item</Button>
+                            <Button variant="outline" onClick={handleRetake} className="cursor-target text-base py-2.5 px-6 transition-all duration-150 ease-in-out shadow-md hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:brightness-90">Scan Another Item</Button>
                         </CardFooter>
                       </Card>
                     </ElectricBorder>
@@ -650,13 +650,13 @@ export default function ScanPageClient() {
                     placeholder="e.g., 049000042566 (Coca-Cola Classic)" 
                     value={barcodeInputValue}
                     onChange={(e) => setBarcodeInputValue(e.target.value)}
-                    className="flex-grow"
+                    className="flex-grow cursor-target"
                     disabled={isBarcodeLoading}
                   />
                   <Button 
                     onClick={handleAnalyzeBarcode} 
                     disabled={isBarcodeLoading || !barcodeInputValue.trim()}
-                    className="bg-accent hover:bg-accent/90 text-accent-foreground text-base py-2.5 px-6 transition-all duration-150 ease-in-out shadow-md hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:brightness-90"
+                    className="cursor-target bg-accent hover:bg-accent/90 text-accent-foreground text-base py-2.5 px-6 transition-all duration-150 ease-in-out shadow-md hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:brightness-90"
                   >
                     <Zap className="mr-2 h-5 w-5" /> Analyze Barcode
                   </Button>
@@ -707,7 +707,7 @@ export default function ScanPageClient() {
                                   {barcodeAnalysisResult.source && <p className="text-sm text-muted-foreground/70 mt-2">Data source: {barcodeAnalysisResult.source}</p>}
                               </CardContent>
                                <CardFooter className="border-t border-border/50 pt-6">
-                                  <Button variant="outline" onClick={handleBarcodeScanNew} className="text-base py-2.5 px-6">Scan New Barcode</Button>
+                                  <Button variant="outline" onClick={handleBarcodeScanNew} className="cursor-target text-base py-2.5 px-6">Scan New Barcode</Button>
                               </CardFooter>
                           </Card>
                        </ElectricBorder>
@@ -737,7 +737,7 @@ export default function ScanPageClient() {
                                         </CardTitle>
                                         {barcodeAnalysisResult.brand && <CardDescription className="pt-1 text-base text-muted-foreground flex items-center gap-2"><Building size={16}/>{barcodeAnalysisResult.brand}</CardDescription>}
                                       </div>
-                                      <Button variant="ghost" size="icon" onClick={() => speakBarcodeAnalysisResults(barcodeAnalysisResult)} title="Read barcode results aloud" className="text-foreground/70 hover:text-primary hover:bg-primary/10">
+                                      <Button variant="ghost" size="icon" onClick={() => speakBarcodeAnalysisResults(barcodeAnalysisResult)} title="Read barcode results aloud" className="cursor-target text-foreground/70 hover:text-primary hover:bg-primary/10">
                                           <Mic className="h-6 w-6" />
                                       </Button>
                                     </div>
@@ -786,7 +786,7 @@ export default function ScanPageClient() {
                               )}
                           </CardContent>
                           <CardFooter className="border-t border-border/50 pt-6">
-                              <Button variant="outline" onClick={handleBarcodeScanNew} className="text-base py-2.5 px-6 transition-all duration-150 ease-in-out shadow-md hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:brightness-90">Scan New Barcode</Button>
+                              <Button variant="outline" onClick={handleBarcodeScanNew} className="cursor-target text-base py-2.5 px-6 transition-all duration-150 ease-in-out shadow-md hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:brightness-90">Scan New Barcode</Button>
                           </CardFooter>
                       </Card>
                     </ElectricBorder>

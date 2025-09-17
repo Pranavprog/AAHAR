@@ -11,19 +11,19 @@ export default function Header() {
           <span>AAHAR</span>
         </Link>
         <nav className="flex items-center gap-1 sm:gap-2">
-          <Button variant="ghost" asChild className="text-foreground/80 hover:text-primary hover:bg-primary/10 rounded-md">
+          <Button variant="ghost" asChild className="cursor-target text-foreground/80 hover:text-primary hover:bg-primary/10 rounded-md">
             <Link href="/" className="flex items-center gap-1.5 px-3 py-2">
               <Home size={20} />
               <span className="hidden sm:inline text-sm font-medium">Home</span>
             </Link>
           </Button>
-          <Button variant="ghost" asChild className="text-foreground/80 hover:text-primary hover:bg-primary/10 rounded-md">
+          <Button variant="ghost" asChild className="cursor-target text-foreground/80 hover:text-primary hover:bg-primary/10 rounded-md">
             <Link href="/scan" className="flex items-center gap-1.5 px-3 py-2">
               <ScanLine size={20} />
                <span className="hidden sm:inline text-sm font-medium">Scan</span>
             </Link>
           </Button>
-          <Button variant="ghost" asChild className="text-foreground/80 hover:text-primary hover:bg-primary/10 rounded-md">
+          <Button variant="ghost" asChild className="cursor-target text-foreground/80 hover:text-primary hover:bg-primary/10 rounded-md">
             <Link href="/tips" className="flex items-center gap-1.5 px-3 py-2">
               <Info size={20} />
               <span className="hidden sm:inline text-sm font-medium">Tips</span>
