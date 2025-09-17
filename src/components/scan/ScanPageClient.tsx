@@ -499,11 +499,13 @@ export default function ScanPageClient() {
             </div>
 
             {isLoading && (
-              <div className="space-y-3 pt-4">
-                <div className="flex justify-center">
-                    <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-                </div>
-                <p className="text-md text-primary text-center">AI is analyzing your item, please wait...</p>
+              <div className="space-y-4 pt-6">
+                  <div className="flex justify-center items-center gap-3">
+                      <div className="w-4 h-4 rounded-full bg-primary animate-pulse-dot [animation-delay:-0.3s]"></div>
+                      <div className="w-4 h-4 rounded-full bg-primary animate-pulse-dot [animation-delay:-0.15s]"></div>
+                      <div className="w-4 h-4 rounded-full bg-primary animate-pulse-dot"></div>
+                  </div>
+                  <p className="text-md text-primary text-center">AI is analyzing your item, please wait...</p>
               </div>
             )}
 
@@ -656,11 +658,13 @@ export default function ScanPageClient() {
             </div>
 
             {isBarcodeLoading && (
-              <div className="space-y-3 pt-6">
-                <div className="flex justify-center">
-                    <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-                </div>
-                <p className="text-md text-primary text-center">AI is analyzing barcode data, please wait...</p>
+              <div className="space-y-4 pt-6">
+                  <div className="flex justify-center items-center gap-3">
+                      <div className="w-4 h-4 rounded-full bg-primary animate-pulse-dot [animation-delay:-0.3s]"></div>
+                      <div className="w-4 h-4 rounded-full bg-primary animate-pulse-dot [animation-delay:-0.15s]"></div>
+                      <div className="w-4 h-4 rounded-full bg-primary animate-pulse-dot"></div>
+                  </div>
+                  <p className="text-md text-primary text-center">AI is analyzing barcode data, please wait...</p>
               </div>
             )}
 
@@ -785,3 +789,5 @@ export default function ScanPageClient() {
     </Card>
   );
 }
+
+    
