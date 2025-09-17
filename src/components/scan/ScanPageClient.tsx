@@ -13,6 +13,7 @@ import { analyzeFoodItem, type AnalyzeFoodItemOutput } from "@/ai/flows/analyze-
 import { analyzeBarcode, type AnalyzeBarcodeOutput } from "@/ai/flows/analyze-barcode-flow";
 import { Camera, AlertTriangle, CheckCircle2, XCircle, ShieldAlert, ShieldCheck, ShieldX, Mic, Percent, Droplets, Waves, Leaf, Package, Microscope, Info, Zap, Upload, Palette, Barcode as BarcodeIcon, Tag, Building, ListChecks, AlertCircle, ScanLine, Image as ImageIcon, Sparkles, HelpCircle, SwitchCamera } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import ElectricBorder from "../ui/electric-border";
 
 const EdibilityBadge: React.FC<{ status: AnalyzeFoodItemOutput["edibility"] }> = ({ status }) => {
   if (!status) return null;
@@ -420,374 +421,382 @@ export default function ScanPageClient() {
 
 
   return (
-    <Card className="w-full border border-primary/60 shadow-[0_0_18px_4px_hsl(var(--primary)/0.3),0_0_30px_8px_hsl(var(--primary)/0.15)] bg-card/80 backdrop-blur-sm">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-3 font-headline text-2xl">
-          <ScanLine className="text-primary h-7 w-7" /> Scan Item or Barcode
-        </CardTitle>
-        <CardDescription>
-          Choose to scan a fresh food item using your camera/upload, or enter a barcode for packaged goods.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="image-scan"><Camera className="mr-2 h-5 w-5" />Image Scan</TabsTrigger>
-            <TabsTrigger value="barcode-scan"><BarcodeIcon className="mr-2 h-5 w-5" />Barcode Scan</TabsTrigger>
-          </TabsList>
-          <TabsContent value="image-scan" className="mt-6">
-            <canvas ref={canvasRef} style={{ display: 'none' }} />
-            <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden" />
+    <ElectricBorder color="hsl(var(--primary))" speed={1} chaos={0.6} thickness={2.5} style={{ borderRadius: '0.75rem' }}>
+      <Card className="w-full bg-card/80 backdrop-blur-sm">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-3 font-headline text-2xl">
+            <ScanLine className="text-primary h-7 w-7" /> Scan Item or Barcode
+          </CardTitle>
+          <CardDescription>
+            Choose to scan a fresh food item using your camera/upload, or enter a barcode for packaged goods.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="image-scan"><Camera className="mr-2 h-5 w-5" />Image Scan</TabsTrigger>
+              <TabsTrigger value="barcode-scan"><BarcodeIcon className="mr-2 h-5 w-5" />Barcode Scan</TabsTrigger>
+            </TabsList>
+            <TabsContent value="image-scan" className="mt-6">
+              <canvas ref={canvasRef} style={{ display: 'none' }} />
+              <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden" />
 
-            <div className="border-2 border-dashed border-border/70 rounded-lg p-4 flex flex-col items-center space-y-4 min-h-[300px] justify-center bg-background/30">
-              {imagePreview ? (
-                <>
-                  <p className="text-sm text-muted-foreground">Image Preview:</p>
-                  <Image
-                    src={imagePreview}
-                    alt="Food item preview"
-                    width={300}
-                    height={300}
-                    className="rounded-md object-contain max-h-[300px] shadow-xl border border-border"
-                  />
-                </>
-              ) : (
-                <>
-                  <div className="w-full max-w-md aspect-video bg-muted/70 rounded-md overflow-hidden relative shadow-inner">
-                    <video ref={videoRef} className="w-full h-full object-cover" playsInline muted />
-                    {activeTab === "image-scan" && !imagePreview && hasCameraPermission === null && (
-                      <div className="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm">
-                        <p className="text-muted-foreground p-4 text-center">Initializing camera... Please allow camera access if prompted.</p>
-                      </div>
-                    )}
-                    {activeTab === "image-scan" && !imagePreview && hasCameraPermission === false && ( 
-                      <div className="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm">
-                        <p className="text-muted-foreground p-4 text-center">Camera not available or permission denied. You can upload a file instead or try switching cameras.</p>
-                      </div>
-                    )}
-                  </div>
-                </>
-              )}
-            </div>
-
-            <div className="flex flex-col sm:flex-row flex-wrap justify-center items-center gap-4 mt-6">
-              {!imagePreview && (
-                <>
-                  <Button onClick={handleCaptureImage} disabled={isLoading || hasCameraPermission !== true} className="bg-accent hover:bg-accent/90 text-accent-foreground w-full sm:w-auto text-base py-2.5 px-6 transition-all duration-150 ease-in-out shadow-md hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:brightness-90">
-                    <Camera className="mr-2 h-5 w-5" /> Capture Image
-                  </Button>
-                  {hasCameraPermission !== false && ( 
-                     <Button onClick={handleSwitchCamera} variant="outline" className="w-full sm:w-auto text-base py-2.5 px-6 border-primary/70 text-primary hover:bg-primary/10 transition-all duration-150 ease-in-out shadow-md hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:brightness-90">
-                       <SwitchCamera className="mr-2 h-5 w-5" /> Switch Camera
-                     </Button>
-                  )}
-                  <Button onClick={() => fileInputRef.current?.click()} variant="outline" disabled={isLoading} className="w-full sm:w-auto text-base py-2.5 px-6 border-primary/70 text-primary hover:bg-primary/10 transition-all duration-150 ease-in-out shadow-md hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:brightness-90">
-                    <Upload className="mr-2 h-5 w-5" /> Upload Image File
-                  </Button>
-                </>
-              )}
-              {imagePreview && (
-                <>
-                  <Button onClick={handleAnalyze} disabled={isLoading || !imageDataUri} className="bg-primary hover:bg-primary/90 w-full sm:w-auto text-base py-2.5 px-6 transition-all duration-150 ease-in-out shadow-md hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:brightness-90">
-                    <Zap className="mr-2 h-5 w-5" /> Analyze Image
-                  </Button>
-                  <Button onClick={handleRetake} variant="outline" disabled={isLoading} className="w-full sm:w-auto text-base py-2.5 px-6 transition-all duration-150 ease-in-out shadow-md hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:brightness-90">
-                    Scan Another
-                  </Button>
-                </>
-              )}
-            </div>
-
-            {isLoading && (
-              <div className="space-y-4 pt-6">
-                  <div className="flex justify-center items-center gap-3">
-                      <div className="w-4 h-4 rounded-full bg-primary animate-pulse-dot [animation-delay:-0.3s]"></div>
-                      <div className="w-4 h-4 rounded-full bg-primary animate-pulse-dot [animation-delay:-0.15s]"></div>
-                      <div className="w-4 h-4 rounded-full bg-primary animate-pulse-dot"></div>
-                  </div>
-                  <p className="text-md text-primary text-center">AI is analyzing your item, please wait...</p>
+              <div className="border-2 border-dashed border-border/70 rounded-lg p-4 flex flex-col items-center space-y-4 min-h-[300px] justify-center bg-background/30">
+                {imagePreview ? (
+                  <>
+                    <p className="text-sm text-muted-foreground">Image Preview:</p>
+                    <Image
+                      src={imagePreview}
+                      alt="Food item preview"
+                      width={300}
+                      height={300}
+                      className="rounded-md object-contain max-h-[300px] shadow-xl border border-border"
+                    />
+                  </>
+                ) : (
+                  <>
+                    <div className="w-full max-w-md aspect-video bg-muted/70 rounded-md overflow-hidden relative shadow-inner">
+                      <video ref={videoRef} className="w-full h-full object-cover" playsInline muted />
+                      {activeTab === "image-scan" && !imagePreview && hasCameraPermission === null && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+                          <p className="text-muted-foreground p-4 text-center">Initializing camera... Please allow camera access if prompted.</p>
+                        </div>
+                      )}
+                      {activeTab === "image-scan" && !imagePreview && hasCameraPermission === false && ( 
+                        <div className="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+                          <p className="text-muted-foreground p-4 text-center">Camera not available or permission denied. You can upload a file instead or try switching cameras.</p>
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
               </div>
-            )}
 
-            {error && (
-              <Alert variant="destructive" className="mt-4 bg-destructive/20 border-destructive/50 text-destructive-foreground">
-                <AlertTriangle className="h-5 w-5" />
-                <AlertTitle>Image Analysis Error</AlertTitle>
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
+              <div className="flex flex-col sm:flex-row flex-wrap justify-center items-center gap-4 mt-6">
+                {!imagePreview && (
+                  <>
+                    <Button onClick={handleCaptureImage} disabled={isLoading || hasCameraPermission !== true} className="bg-accent hover:bg-accent/90 text-accent-foreground w-full sm:w-auto text-base py-2.5 px-6 transition-all duration-150 ease-in-out shadow-md hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:brightness-90">
+                      <Camera className="mr-2 h-5 w-5" /> Capture Image
+                    </Button>
+                    {hasCameraPermission !== false && ( 
+                       <Button onClick={handleSwitchCamera} variant="outline" className="w-full sm:w-auto text-base py-2.5 px-6 border-primary/70 text-primary hover:bg-primary/10 transition-all duration-150 ease-in-out shadow-md hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:brightness-90">
+                         <SwitchCamera className="mr-2 h-5 w-5" /> Switch Camera
+                       </Button>
+                    )}
+                    <Button onClick={() => fileInputRef.current?.click()} variant="outline" disabled={isLoading} className="w-full sm:w-auto text-base py-2.5 px-6 border-primary/70 text-primary hover:bg-primary/10 transition-all duration-150 ease-in-out shadow-md hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:brightness-90">
+                      <Upload className="mr-2 h-5 w-5" /> Upload Image File
+                    </Button>
+                  </>
+                )}
+                {imagePreview && (
+                  <>
+                    <Button onClick={handleAnalyze} disabled={isLoading || !imageDataUri} className="bg-primary hover:bg-primary/90 w-full sm:w-auto text-base py-2.5 px-6 transition-all duration-150 ease-in-out shadow-md hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:brightness-90">
+                      <Zap className="mr-2 h-5 w-5" /> Analyze Image
+                    </Button>
+                    <Button onClick={handleRetake} variant="outline" disabled={isLoading} className="w-full sm:w-auto text-base py-2.5 px-6 transition-all duration-150 ease-in-out shadow-md hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:brightness-90">
+                      Scan Another
+                    </Button>
+                  </>
+                )}
+              </div>
 
-            {analysisResult && (
-              <>
-                <Alert variant="default" className="mt-6 mb-4 bg-muted/30 border-muted/50">
-                  <Info className="h-5 w-5 text-primary" />
-                  <AlertTitle className="text-foreground font-semibold">AI-Generated Analysis (Image)</AlertTitle>
-                  <AlertDescription className="text-muted-foreground">
-                    This analysis is AI-generated and for informational purposes. Chemical composition and organic status are estimations based on visual cues and may not be 100% accurate. Consult experts for critical decisions.
-                  </AlertDescription>
+              {isLoading && (
+                <div className="space-y-4 pt-6">
+                    <div className="flex justify-center items-center gap-3">
+                        <div className="w-4 h-4 rounded-full bg-primary animate-pulse-dot [animation-delay:-0.3s]"></div>
+                        <div className="w-4 h-4 rounded-full bg-primary animate-pulse-dot [animation-delay:-0.15s]"></div>
+                        <div className="w-4 h-4 rounded-full bg-primary animate-pulse-dot"></div>
+                    </div>
+                    <p className="text-md text-primary text-center">AI is analyzing your item, please wait...</p>
+                </div>
+              )}
+
+              {error && (
+                <Alert variant="destructive" className="mt-4 bg-destructive/20 border-destructive/50 text-destructive-foreground">
+                  <AlertTriangle className="h-5 w-5" />
+                  <AlertTitle>Image Analysis Error</AlertTitle>
+                  <AlertDescription>{error}</AlertDescription>
                 </Alert>
-                
-                {analysisResult.identification.isFoodItem === false ? (
-                    <Card className="bg-card/70 backdrop-blur-sm shadow-xl border border-yellow-500/60 shadow-[0_0_15px_3px_hsl(var(--accent)/0.3),0_0_25px_7px_hsl(var(--accent)/0.15)]">
+              )}
+
+              {analysisResult && (
+                <>
+                  <Alert variant="default" className="mt-6 mb-4 bg-muted/30 border-muted/50">
+                    <Info className="h-5 w-5 text-primary" />
+                    <AlertTitle className="text-foreground font-semibold">AI-Generated Analysis (Image)</AlertTitle>
+                    <AlertDescription className="text-muted-foreground">
+                      This analysis is AI-generated and for informational purposes. Chemical composition and organic status are estimations based on visual cues and may not be 100% accurate. Consult experts for critical decisions.
+                    </AlertDescription>
+                  </Alert>
+                  
+                  {analysisResult.identification.isFoodItem === false ? (
+                      <ElectricBorder color="hsl(var(--destructive))" chaos={0.8} speed={1.2}>
+                        <Card className="bg-card/70 backdrop-blur-sm shadow-xl border border-yellow-500/60">
+                            <CardHeader className="border-b border-border/50 pb-4">
+                                <CardTitle className="font-headline text-2xl md:text-3xl text-yellow-300 flex items-center gap-3">
+                                    <AlertTriangle size={30} /> Item Not Identified as Food
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="p-6">
+                                <p className="text-muted-foreground text-lg">
+                                    {analysisResult.identification.name || "The scanned item does not appear to be a food product."}
+                                </p>
+                                <p className="text-sm text-muted-foreground mt-2">AAHAR is designed for food analysis. Please scan a food item.</p>
+                            </CardContent>
+                            <CardFooter className="border-t border-border/50 pt-6">
+                                <Button variant="outline" onClick={handleRetake} className="text-base py-2.5 px-6 transition-all duration-150 ease-in-out shadow-md hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:brightness-90">Scan Another Item</Button>
+                            </CardFooter>
+                        </Card>
+                      </ElectricBorder>
+                  ) : (
+                    <ElectricBorder color="hsl(var(--accent))" speed={1} chaos={0.6} thickness={2} style={{ borderRadius: '0.75rem' }}>
+                      <Card className="bg-card/70 backdrop-blur-sm shadow-xl">
                         <CardHeader className="border-b border-border/50 pb-4">
-                            <CardTitle className="font-headline text-2xl md:text-3xl text-yellow-300 flex items-center gap-3">
-                                <AlertTriangle size={30} /> Item Not Identified as Food
+                            <div className="flex justify-between items-center">
+                            <CardTitle className="font-headline text-2xl md:text-3xl text-primary flex items-center gap-3">
+                                <Package size={30} /> {analysisResult.identification.name || "Food Item"}
                             </CardTitle>
+                            <Button variant="ghost" size="icon" onClick={() => speakImageScanAnalysisResults(analysisResult)} title="Read results aloud" className="text-foreground/70 hover:text-primary hover:bg-primary/10">
+                                <Mic className="h-6 w-6" />
+                            </Button>
+                            </div>
+                            <CardDescription className="pt-2">
+                                <EdibilityBadge status={analysisResult.edibility} />
+                            </CardDescription>
                         </CardHeader>
-                        <CardContent className="p-6">
-                            <p className="text-muted-foreground text-lg">
-                                {analysisResult.identification.name || "The scanned item does not appear to be a food product."}
-                            </p>
-                            <p className="text-sm text-muted-foreground mt-2">AAHAR is designed for food analysis. Please scan a food item.</p>
+                        <CardContent className="space-y-6 p-6">
+                            <div>
+                            <h3 className="text-xl font-semibold flex items-center gap-2.5 mb-2 text-foreground/90"><Microscope size={22} className="text-accent"/>Identification</h3>
+                            <p className="text-muted-foreground">Type: <span className="font-medium text-foreground/80">{analysisResult.identification.itemType || "N/A"}</span></p>
+                            {analysisResult.identification.confidence !== undefined && (
+                                <div className="flex items-center gap-2 mt-1">
+                                <span className="text-muted-foreground">Confidence:</span>
+                                <Progress value={analysisResult.identification.confidence * 100} className="w-1/2 h-2.5 bg-muted/50 [&>div]:bg-primary" /> 
+                                <span className="font-medium text-foreground/80">{(analysisResult.identification.confidence * 100).toFixed(0)}%</span>
+                                </div>
+                            )}
+                            {analysisResult.identification.isOrganic !== undefined && (
+                                <p className="text-muted-foreground mt-1 flex items-center gap-2">
+                                    {analysisResult.identification.isOrganic ? <Sparkles size={18} className="text-green-400" /> : <HelpCircle size={18} className="text-yellow-400" />}
+                                    Organic Status: <span className="font-medium text-foreground/80">
+                                        {analysisResult.identification.isOrganic ? "Likely Organic" : "Likely Not Organic / Undetermined"}
+                                    </span>
+                                    {analysisResult.identification.organicReasoning && <span className="text-xs italic text-muted-foreground/70">({analysisResult.identification.organicReasoning})</span>}
+                                </p>
+                            )}
+                            {analysisResult.identification.dominantColors && analysisResult.identification.dominantColors.length > 0 && (
+                                <div className="mt-2">
+                                <h4 className="text-sm font-medium flex items-center gap-2 text-foreground/80"><Palette size={16} className="text-accent/80"/>Dominant Colors:</h4>
+                                <p className="text-xs text-muted-foreground capitalize">{analysisResult.identification.dominantColors.join(', ')}</p>
+                                </div>
+                            )}
+                            </div>
+                            
+                            {analysisResult.components && (
+                            <div className="border-t border-border/50 pt-4">
+                            <h3 className="text-xl font-semibold flex items-center gap-2.5 mb-2 text-foreground/90"><Percent size={22} className="text-accent"/>Key Components</h3>
+                            <ul className="space-y-1.5 text-muted-foreground">
+                                {analysisResult.components.waterPercentage !== undefined && <li className="flex items-center gap-2"><Droplets size={18} className="text-blue-400" />Water: <span className="font-medium text-foreground/80">{analysisResult.components.waterPercentage}%</span></li>}
+                                {analysisResult.components.sugarPercentage !== undefined && <li className="flex items-center gap-2"><Waves size={18} className="text-orange-400" />Sugar: <span className="font-medium text-foreground/80">{analysisResult.components.sugarPercentage}%</span></li>}
+                                {analysisResult.components.fiberPercentage !== undefined && <li className="flex items-center gap-2"><Leaf size={18} className="text-green-400" />Fiber: <span className="font-medium text-foreground/80">{analysisResult.components.fiberPercentage}%</span></li>}
+                            </ul>
+                            </div>
+                            )}
+
+                            {analysisResult.components?.vitaminsAndMinerals && (
+                            <div className="border-t border-border/50 pt-4">
+                            <h3 className="text-xl font-semibold flex items-center gap-2.5 mb-2 text-foreground/90"><Info size={22} className="text-accent"/>Vitamins & Minerals</h3>
+                            <p className="text-sm text-muted-foreground">{analysisResult.components.vitaminsAndMinerals}</p>
+                            </div>
+                            )}
+
+                            {analysisResult.chemicalResidues && analysisResult.chemicalResidues.length > 0 && (
+                            <div className="border-t border-border/50 pt-4">
+                                <h3 className="text-xl font-semibold text-red-400 flex items-center gap-2.5 mb-3"><AlertTriangle size={22} />Potential Chemical Residues & Analysis</h3>
+                                <div className="space-y-3">
+                                {analysisResult.chemicalResidues.map((residue, index) => (
+                                    <div key={index} className="text-sm bg-red-500/10 p-3.5 rounded-md border border-red-500/40 shadow-md">
+                                        <p className="font-semibold text-red-300 text-base">{residue.name}</p>
+                                        {residue.estimatedPercentage !== undefined && (
+                                            <p className="text-red-400/90 mt-1">Estimated Presence: <span className="font-medium">{residue.estimatedPercentage.toFixed(2)}%</span></p>
+                                        )}
+                                        {residue.hazardousEffects && (
+                                            <p className="text-red-400/80 mt-1.5">Potential Effects: {residue.hazardousEffects}</p>
+                                        )}
+                                         {!residue.estimatedPercentage && !residue.hazardousEffects && (
+                                            <p className="text-red-400/70 mt-1">No specific percentage or effects details provided by AI for this residue.</p>
+                                        )}
+                                    </div>
+                                ))}
+                                </div>
+                            </div>
+                            )}
                         </CardContent>
                         <CardFooter className="border-t border-border/50 pt-6">
                             <Button variant="outline" onClick={handleRetake} className="text-base py-2.5 px-6 transition-all duration-150 ease-in-out shadow-md hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:brightness-90">Scan Another Item</Button>
                         </CardFooter>
-                    </Card>
-                ) : (
-                    <Card className="bg-card/70 backdrop-blur-sm shadow-xl border border-accent/60 shadow-[0_0_15px_3px_hsl(var(--accent)/0.3),0_0_25px_7px_hsl(var(--accent)/0.15)]">
-                    <CardHeader className="border-b border-border/50 pb-4">
-                        <div className="flex justify-between items-center">
-                        <CardTitle className="font-headline text-2xl md:text-3xl text-primary flex items-center gap-3">
-                            <Package size={30} /> {analysisResult.identification.name || "Food Item"}
-                        </CardTitle>
-                        <Button variant="ghost" size="icon" onClick={() => speakImageScanAnalysisResults(analysisResult)} title="Read results aloud" className="text-foreground/70 hover:text-primary hover:bg-primary/10">
-                            <Mic className="h-6 w-6" />
-                        </Button>
-                        </div>
-                        <CardDescription className="pt-2">
-                            <EdibilityBadge status={analysisResult.edibility} />
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-6 p-6">
-                        <div>
-                        <h3 className="text-xl font-semibold flex items-center gap-2.5 mb-2 text-foreground/90"><Microscope size={22} className="text-accent"/>Identification</h3>
-                        <p className="text-muted-foreground">Type: <span className="font-medium text-foreground/80">{analysisResult.identification.itemType || "N/A"}</span></p>
-                        {analysisResult.identification.confidence !== undefined && (
-                            <div className="flex items-center gap-2 mt-1">
-                            <span className="text-muted-foreground">Confidence:</span>
-                            <Progress value={analysisResult.identification.confidence * 100} className="w-1/2 h-2.5 bg-muted/50 [&>div]:bg-primary" /> 
-                            <span className="font-medium text-foreground/80">{(analysisResult.identification.confidence * 100).toFixed(0)}%</span>
-                            </div>
-                        )}
-                        {analysisResult.identification.isOrganic !== undefined && (
-                            <p className="text-muted-foreground mt-1 flex items-center gap-2">
-                                {analysisResult.identification.isOrganic ? <Sparkles size={18} className="text-green-400" /> : <HelpCircle size={18} className="text-yellow-400" />}
-                                Organic Status: <span className="font-medium text-foreground/80">
-                                    {analysisResult.identification.isOrganic ? "Likely Organic" : "Likely Not Organic / Undetermined"}
-                                </span>
-                                {analysisResult.identification.organicReasoning && <span className="text-xs italic text-muted-foreground/70">({analysisResult.identification.organicReasoning})</span>}
-                            </p>
-                        )}
-                        {analysisResult.identification.dominantColors && analysisResult.identification.dominantColors.length > 0 && (
-                            <div className="mt-2">
-                            <h4 className="text-sm font-medium flex items-center gap-2 text-foreground/80"><Palette size={16} className="text-accent/80"/>Dominant Colors:</h4>
-                            <p className="text-xs text-muted-foreground capitalize">{analysisResult.identification.dominantColors.join(', ')}</p>
-                            </div>
-                        )}
-                        </div>
-                        
-                        {analysisResult.components && (
-                        <div className="border-t border-border/50 pt-4">
-                        <h3 className="text-xl font-semibold flex items-center gap-2.5 mb-2 text-foreground/90"><Percent size={22} className="text-accent"/>Key Components</h3>
-                        <ul className="space-y-1.5 text-muted-foreground">
-                            {analysisResult.components.waterPercentage !== undefined && <li className="flex items-center gap-2"><Droplets size={18} className="text-blue-400" />Water: <span className="font-medium text-foreground/80">{analysisResult.components.waterPercentage}%</span></li>}
-                            {analysisResult.components.sugarPercentage !== undefined && <li className="flex items-center gap-2"><Waves size={18} className="text-orange-400" />Sugar: <span className="font-medium text-foreground/80">{analysisResult.components.sugarPercentage}%</span></li>}
-                            {analysisResult.components.fiberPercentage !== undefined && <li className="flex items-center gap-2"><Leaf size={18} className="text-green-400" />Fiber: <span className="font-medium text-foreground/80">{analysisResult.components.fiberPercentage}%</span></li>}
-                        </ul>
-                        </div>
-                        )}
-
-                        {analysisResult.components?.vitaminsAndMinerals && (
-                        <div className="border-t border-border/50 pt-4">
-                        <h3 className="text-xl font-semibold flex items-center gap-2.5 mb-2 text-foreground/90"><Info size={22} className="text-accent"/>Vitamins & Minerals</h3>
-                        <p className="text-sm text-muted-foreground">{analysisResult.components.vitaminsAndMinerals}</p>
-                        </div>
-                        )}
-
-                        {analysisResult.chemicalResidues && analysisResult.chemicalResidues.length > 0 && (
-                        <div className="border-t border-border/50 pt-4">
-                            <h3 className="text-xl font-semibold text-red-400 flex items-center gap-2.5 mb-3"><AlertTriangle size={22} />Potential Chemical Residues & Analysis</h3>
-                            <div className="space-y-3">
-                            {analysisResult.chemicalResidues.map((residue, index) => (
-                                <div key={index} className="text-sm bg-red-500/10 p-3.5 rounded-md border border-red-500/40 shadow-md">
-                                    <p className="font-semibold text-red-300 text-base">{residue.name}</p>
-                                    {residue.estimatedPercentage !== undefined && (
-                                        <p className="text-red-400/90 mt-1">Estimated Presence: <span className="font-medium">{residue.estimatedPercentage.toFixed(2)}%</span></p>
-                                    )}
-                                    {residue.hazardousEffects && (
-                                        <p className="text-red-400/80 mt-1.5">Potential Effects: {residue.hazardousEffects}</p>
-                                    )}
-                                     {!residue.estimatedPercentage && !residue.hazardousEffects && (
-                                        <p className="text-red-400/70 mt-1">No specific percentage or effects details provided by AI for this residue.</p>
-                                    )}
-                                </div>
-                            ))}
-                            </div>
-                        </div>
-                        )}
-                    </CardContent>
-                    <CardFooter className="border-t border-border/50 pt-6">
-                        <Button variant="outline" onClick={handleRetake} className="text-base py-2.5 px-6 transition-all duration-150 ease-in-out shadow-md hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:brightness-90">Scan Another Item</Button>
-                    </CardFooter>
-                    </Card>
-                )}
-              </>
-            )}
-          </TabsContent>
-          <TabsContent value="barcode-scan" className="mt-6">
-            <div className="space-y-4">
-              <p className="text-muted-foreground">Enter the barcode number found on the product packaging.</p>
-              <div className="flex gap-2">
-                <Input 
-                  type="text" 
-                  placeholder="e.g., 049000042566 (Coca-Cola Classic)" 
-                  value={barcodeInputValue}
-                  onChange={(e) => setBarcodeInputValue(e.target.value)}
-                  className="flex-grow"
-                  disabled={isBarcodeLoading}
-                />
-                <Button 
-                  onClick={handleAnalyzeBarcode} 
-                  disabled={isBarcodeLoading || !barcodeInputValue.trim()}
-                  className="bg-accent hover:bg-accent/90 text-accent-foreground text-base py-2.5 px-6 transition-all duration-150 ease-in-out shadow-md hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:brightness-90"
-                >
-                  <Zap className="mr-2 h-5 w-5" /> Analyze Barcode
-                </Button>
+                      </Card>
+                    </ElectricBorder>
+                  )}
+                </>
+              )}
+            </TabsContent>
+            <TabsContent value="barcode-scan" className="mt-6">
+              <div className="space-y-4">
+                <p className="text-muted-foreground">Enter the barcode number found on the product packaging.</p>
+                <div className="flex gap-2">
+                  <Input 
+                    type="text" 
+                    placeholder="e.g., 049000042566 (Coca-Cola Classic)" 
+                    value={barcodeInputValue}
+                    onChange={(e) => setBarcodeInputValue(e.target.value)}
+                    className="flex-grow"
+                    disabled={isBarcodeLoading}
+                  />
+                  <Button 
+                    onClick={handleAnalyzeBarcode} 
+                    disabled={isBarcodeLoading || !barcodeInputValue.trim()}
+                    className="bg-accent hover:bg-accent/90 text-accent-foreground text-base py-2.5 px-6 transition-all duration-150 ease-in-out shadow-md hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:brightness-90"
+                  >
+                    <Zap className="mr-2 h-5 w-5" /> Analyze Barcode
+                  </Button>
+                </div>
               </div>
-            </div>
 
-            {isBarcodeLoading && (
-              <div className="space-y-4 pt-6">
-                  <div className="flex justify-center items-center gap-3">
-                      <div className="w-4 h-4 rounded-full bg-primary animate-pulse-dot [animation-delay:-0.3s]"></div>
-                      <div className="w-4 h-4 rounded-full bg-primary animate-pulse-dot [animation-delay:-0.15s]"></div>
-                      <div className="w-4 h-4 rounded-full bg-primary animate-pulse-dot"></div>
-                  </div>
-                  <p className="text-md text-primary text-center">AI is analyzing barcode data, please wait...</p>
-              </div>
-            )}
+              {isBarcodeLoading && (
+                <div className="space-y-4 pt-6">
+                    <div className="flex justify-center items-center gap-3">
+                        <div className="w-4 h-4 rounded-full bg-primary animate-pulse-dot [animation-delay:-0.3s]"></div>
+                        <div className="w-4 h-4 rounded-full bg-primary animate-pulse-dot [animation-delay:-0.15s]"></div>
+                        <div className="w-4 h-4 rounded-full bg-primary animate-pulse-dot"></div>
+                    </div>
+                    <p className="text-md text-primary text-center">AI is analyzing barcode data, please wait...</p>
+                </div>
+              )}
 
-            {barcodeError && (
-              <Alert variant="destructive" className="mt-4 bg-destructive/20 border-destructive/50 text-destructive-foreground">
-                <AlertTriangle className="h-5 w-5" />
-                <AlertTitle>Barcode Analysis Error</AlertTitle>
-                <AlertDescription>{barcodeError}</AlertDescription>
-              </Alert>
-            )}
-            
-            {barcodeAnalysisResult && (
-              <>
-                <Alert variant="default" className="mt-6 mb-4 bg-muted/30 border-muted/50">
-                  <Info className="h-5 w-5 text-primary" />
-                  <AlertTitle className="text-foreground font-semibold">Product Analysis (Barcode)</AlertTitle>
-                  <AlertDescription className="text-muted-foreground">
-                    Product information is fetched from Open Food Facts. Ingredient analysis is AI-generated and for informational purposes. It may not be 100% accurate. Consult experts for critical decisions.
-                  </AlertDescription>
+              {barcodeError && (
+                <Alert variant="destructive" className="mt-4 bg-destructive/20 border-destructive/50 text-destructive-foreground">
+                  <AlertTriangle className="h-5 w-5" />
+                  <AlertTitle>Barcode Analysis Error</AlertTitle>
+                  <AlertDescription>{barcodeError}</AlertDescription>
                 </Alert>
+              )}
+              
+              {barcodeAnalysisResult && (
+                <>
+                  <Alert variant="default" className="mt-6 mb-4 bg-muted/30 border-muted/50">
+                    <Info className="h-5 w-5 text-primary" />
+                    <AlertTitle className="text-foreground font-semibold">Product Analysis (Barcode)</AlertTitle>
+                    <AlertDescription className="text-muted-foreground">
+                      Product information is fetched from Open Food Facts. Ingredient analysis is AI-generated and for informational purposes. It may not be 100% accurate. Consult experts for critical decisions.
+                    </AlertDescription>
+                  </Alert>
 
-                {!barcodeAnalysisResult.isFound ? (
-                     <Card className="bg-card/70 backdrop-blur-sm shadow-xl border border-yellow-500/60 mt-6">
-                        <CardHeader className="border-b border-border/50 pb-4">
-                            <CardTitle className="font-headline text-2xl md:text-3xl text-yellow-300 flex items-center gap-3">
-                                <AlertTriangle size={30} /> Product Not Found
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="p-6">
-                            <p className="text-muted-foreground text-lg">
-                                {barcodeAnalysisResult.overallAssessment || `Could not retrieve information for barcode: ${barcodeInputValue}. Please check the number or try another.`}
-                            </p>
-                            {barcodeAnalysisResult.source && <p className="text-sm text-muted-foreground/70 mt-2">Data source: {barcodeAnalysisResult.source}</p>}
-                        </CardContent>
-                         <CardFooter className="border-t border-border/50 pt-6">
-                            <Button variant="outline" onClick={handleBarcodeScanNew} className="text-base py-2.5 px-6">Scan New Barcode</Button>
-                        </CardFooter>
-                    </Card>
-                ) : (
-                    <Card className="bg-card/70 backdrop-blur-sm shadow-xl border border-accent/60 shadow-[0_0_15px_3px_hsl(var(--accent)/0.3),0_0_25px_7px_hsl(var(--accent)/0.15)] mt-6">
-                        <CardHeader className="border-b border-border/50 pb-4">
-                             <div className="flex flex-col sm:flex-row gap-4 items-start">
-                                {barcodeAnalysisResult.imageUrl ? (
-                                    <Image
-                                        src={barcodeAnalysisResult.imageUrl}
-                                        alt={barcodeAnalysisResult.productName || "Product Image"}
-                                        width={100}
-                                        height={100}
-                                        className="rounded-md object-contain border border-border shadow-md bg-white"
-                                    />
-                                ) : (
-                                     <div className="w-[100px] h-[100px] flex items-center justify-center bg-muted/70 rounded-md border border-border shadow-md">
-                                        <ImageIcon size={48} className="text-muted-foreground" />
+                  {!barcodeAnalysisResult.isFound ? (
+                       <ElectricBorder color="hsl(var(--destructive))" chaos={0.8} speed={1.2}>
+                          <Card className="bg-card/70 backdrop-blur-sm shadow-xl border border-yellow-500/60 mt-6">
+                              <CardHeader className="border-b border-border/50 pb-4">
+                                  <CardTitle className="font-headline text-2xl md:text-3xl text-yellow-300 flex items-center gap-3">
+                                      <AlertTriangle size={30} /> Product Not Found
+                                  </CardTitle>
+                              </CardHeader>
+                              <CardContent className="p-6">
+                                  <p className="text-muted-foreground text-lg">
+                                      {barcodeAnalysisResult.overallAssessment || `Could not retrieve information for barcode: ${barcodeInputValue}. Please check the number or try another.`}
+                                  </p>
+                                  {barcodeAnalysisResult.source && <p className="text-sm text-muted-foreground/70 mt-2">Data source: {barcodeAnalysisResult.source}</p>}
+                              </CardContent>
+                               <CardFooter className="border-t border-border/50 pt-6">
+                                  <Button variant="outline" onClick={handleBarcodeScanNew} className="text-base py-2.5 px-6">Scan New Barcode</Button>
+                              </CardFooter>
+                          </Card>
+                       </ElectricBorder>
+                  ) : (
+                    <ElectricBorder color="hsl(var(--accent))" speed={1} chaos={0.6} thickness={2} style={{ borderRadius: '0.75rem' }}>
+                      <Card className="bg-card/70 backdrop-blur-sm shadow-xl mt-6">
+                          <CardHeader className="border-b border-border/50 pb-4">
+                               <div className="flex flex-col sm:flex-row gap-4 items-start">
+                                  {barcodeAnalysisResult.imageUrl ? (
+                                      <Image
+                                          src={barcodeAnalysisResult.imageUrl}
+                                          alt={barcodeAnalysisResult.productName || "Product Image"}
+                                          width={100}
+                                          height={100}
+                                          className="rounded-md object-contain border border-border shadow-md bg-white"
+                                      />
+                                  ) : (
+                                       <div className="w-[100px] h-[100px] flex items-center justify-center bg-muted/70 rounded-md border border-border shadow-md">
+                                          <ImageIcon size={48} className="text-muted-foreground" />
+                                      </div>
+                                  )}
+                                  <div className="flex-1">
+                                    <div className="flex justify-between items-start">
+                                      <div>
+                                        <CardTitle className="font-headline text-2xl md:text-3xl text-primary flex items-center gap-2">
+                                            <Tag size={30} /> {barcodeAnalysisResult.productName || "Product"}
+                                        </CardTitle>
+                                        {barcodeAnalysisResult.brand && <CardDescription className="pt-1 text-base text-muted-foreground flex items-center gap-2"><Building size={16}/>{barcodeAnalysisResult.brand}</CardDescription>}
+                                      </div>
+                                      <Button variant="ghost" size="icon" onClick={() => speakBarcodeAnalysisResults(barcodeAnalysisResult)} title="Read barcode results aloud" className="text-foreground/70 hover:text-primary hover:bg-primary/10">
+                                          <Mic className="h-6 w-6" />
+                                      </Button>
                                     </div>
-                                )}
-                                <div className="flex-1">
-                                  <div className="flex justify-between items-start">
-                                    <div>
-                                      <CardTitle className="font-headline text-2xl md:text-3xl text-primary flex items-center gap-2">
-                                          <Tag size={30} /> {barcodeAnalysisResult.productName || "Product"}
-                                      </CardTitle>
-                                      {barcodeAnalysisResult.brand && <CardDescription className="pt-1 text-base text-muted-foreground flex items-center gap-2"><Building size={16}/>{barcodeAnalysisResult.brand}</CardDescription>}
-                                    </div>
-                                    <Button variant="ghost" size="icon" onClick={() => speakBarcodeAnalysisResults(barcodeAnalysisResult)} title="Read barcode results aloud" className="text-foreground/70 hover:text-primary hover:bg-primary/10">
-                                        <Mic className="h-6 w-6" />
-                                    </Button>
+                                    {barcodeAnalysisResult.source && <CardDescription className="pt-1 text-xs text-muted-foreground/70">Data from: {barcodeAnalysisResult.source}</CardDescription>}
                                   </div>
-                                  {barcodeAnalysisResult.source && <CardDescription className="pt-1 text-xs text-muted-foreground/70">Data from: {barcodeAnalysisResult.source}</CardDescription>}
-                                </div>
-                            </div>
-                        </CardHeader>
-                        <CardContent className="space-y-5 p-6">
-                            {barcodeAnalysisResult.ingredients && barcodeAnalysisResult.ingredients.length > 0 && (
-                                <div>
-                                    <h3 className="text-lg font-semibold flex items-center gap-2 mb-1.5 text-foreground/90"><ListChecks size={20} className="text-accent"/>Ingredients</h3>
-                                    <p className="text-sm text-muted-foreground bg-background/40 p-3 rounded-md border border-border/40">
-                                        {barcodeAnalysisResult.ingredients.join(', ')}
-                                    </p>
-                                </div>
-                            )}
-                             {barcodeAnalysisResult.allergens && barcodeAnalysisResult.allergens.length > 0 && (
-                                <div className="border-t border-border/50 pt-4">
-                                    <h3 className="text-lg font-semibold flex items-center gap-2 mb-1.5 text-yellow-400"><AlertCircle size={20} />Declared Allergens</h3>
-                                    <ul className="list-disc list-inside ml-1 space-y-1 text-sm text-yellow-300/90 bg-yellow-500/10 p-3 rounded-md border border-yellow-500/30">
-                                        {barcodeAnalysisResult.allergens.map((allergen, index) => (
-                                            <li key={index}>{allergen}</li>
-                                        ))}
-                                    </ul>
-                                </div>
-                            )}
-                            {barcodeAnalysisResult.potentialConcerns && barcodeAnalysisResult.potentialConcerns.length > 0 && (
-                                <div className="border-t border-border/50 pt-4">
-                                    <h3 className="text-lg font-semibold flex items-center gap-2 mb-1.5 text-red-400"><AlertTriangle size={20} />Potential Concerns</h3>
-                                    <div className="space-y-2">
-                                    {barcodeAnalysisResult.potentialConcerns.map((item, index) => (
-                                        <Alert key={index} variant="destructive" className="bg-destructive/10 border-destructive/30 text-sm">
-                                            <AlertTriangle className="h-4 w-4" />
-                                            <AlertTitle className="font-medium text-red-300">{item.concern}</AlertTitle>
-                                            {item.details && <AlertDescription className="text-red-400/80">{item.details}</AlertDescription>}
-                                        </Alert>
-                                    ))}
-                                    </div>
-                                </div>
-                            )}
-                             {barcodeAnalysisResult.overallAssessment && (
-                                <div className="border-t border-border/50 pt-4">
-                                    <h3 className="text-lg font-semibold flex items-center gap-2 mb-1.5 text-foreground/90"><Info size={20} className="text-accent"/>Overall Assessment</h3>
-                                    <p className="text-sm text-muted-foreground p-3 bg-muted/20 rounded-md border border-muted/40">{barcodeAnalysisResult.overallAssessment}</p>
-                                </div>
-                            )}
-                        </CardContent>
-                        <CardFooter className="border-t border-border/50 pt-6">
-                            <Button variant="outline" onClick={handleBarcodeScanNew} className="text-base py-2.5 px-6 transition-all duration-150 ease-in-out shadow-md hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:brightness-90">Scan New Barcode</Button>
-                        </CardFooter>
-                    </Card>
-                )}
-              </>
-            )}
-          </TabsContent>
-        </Tabs>
-      </CardContent>
-    </Card>
+                              </div>
+                          </CardHeader>
+                          <CardContent className="space-y-5 p-6">
+                              {barcodeAnalysisResult.ingredients && barcodeAnalysisResult.ingredients.length > 0 && (
+                                  <div>
+                                      <h3 className="text-lg font-semibold flex items-center gap-2 mb-1.5 text-foreground/90"><ListChecks size={20} className="text-accent"/>Ingredients</h3>
+                                      <p className="text-sm text-muted-foreground bg-background/40 p-3 rounded-md border border-border/40">
+                                          {barcodeAnalysisResult.ingredients.join(', ')}
+                                      </p>
+                                  </div>
+                              )}
+                               {barcodeAnalysisResult.allergens && barcodeAnalysisResult.allergens.length > 0 && (
+                                  <div className="border-t border-border/50 pt-4">
+                                      <h3 className="text-lg font-semibold flex items-center gap-2 mb-1.5 text-yellow-400"><AlertCircle size={20} />Declared Allergens</h3>
+                                      <ul className="list-disc list-inside ml-1 space-y-1 text-sm text-yellow-300/90 bg-yellow-500/10 p-3 rounded-md border border-yellow-500/30">
+                                          {barcodeAnalysisResult.allergens.map((allergen, index) => (
+                                              <li key={index}>{allergen}</li>
+                                          ))}
+                                      </ul>
+                                  </div>
+                              )}
+                              {barcodeAnalysisResult.potentialConcerns && barcodeAnalysisResult.potentialConcerns.length > 0 && (
+                                  <div className="border-t border-border/50 pt-4">
+                                      <h3 className="text-lg font-semibold flex items-center gap-2 mb-1.5 text-red-400"><AlertTriangle size={20} />Potential Concerns</h3>
+                                      <div className="space-y-2">
+                                      {barcodeAnalysisResult.potentialConcerns.map((item, index) => (
+                                          <Alert key={index} variant="destructive" className="bg-destructive/10 border-destructive/30 text-sm">
+                                              <AlertTriangle className="h-4 w-4" />
+                                              <AlertTitle className="font-medium text-red-300">{item.concern}</AlertTitle>
+                                              {item.details && <AlertDescription className="text-red-400/80">{item.details}</AlertDescription>}
+                                          </Alert>
+                                      ))}
+                                      </div>
+                                  </div>
+                              )}
+                               {barcodeAnalysisResult.overallAssessment && (
+                                  <div className="border-t border-border/50 pt-4">
+                                      <h3 className="text-lg font-semibold flex items-center gap-2 mb-1.5 text-foreground/90"><Info size={20} className="text-accent"/>Overall Assessment</h3>
+                                      <p className="text-sm text-muted-foreground p-3 bg-muted/20 rounded-md border border-muted/40">{barcodeAnalysisResult.overallAssessment}</p>
+                                  </div>
+                              )}
+                          </CardContent>
+                          <CardFooter className="border-t border-border/50 pt-6">
+                              <Button variant="outline" onClick={handleBarcodeScanNew} className="text-base py-2.5 px-6 transition-all duration-150 ease-in-out shadow-md hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:brightness-90">Scan New Barcode</Button>
+                          </CardFooter>
+                      </Card>
+                    </ElectricBorder>
+                  )}
+                </>
+              )}
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
+    </ElectricBorder>
   );
 }
-
-    

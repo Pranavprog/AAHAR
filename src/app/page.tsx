@@ -13,6 +13,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import ElectricBorder from '@/components/ui/electric-border';
 
 const featuredTips = [
   {
@@ -62,26 +63,28 @@ export default function HomePage() {
         <div className="grid md:grid-cols-4 gap-8">
           <Dialog>
             <DialogTrigger asChild>
-              <Card className="border border-primary/50 shadow-[0_0_10px_2px_hsl(var(--primary)/0.4),0_0_20px_5px_hsl(var(--primary)/0.2)] hover:shadow-[0_0_18px_3px_hsl(var(--primary)/0.6),0_0_30px_8px_hsl(var(--primary)/0.3)] group hover:scale-[1.05] transition-all duration-300 ease-in-out animate-in fade-in slide-in-from-bottom-10 duration-500 delay-400 cursor-pointer bg-card/80 backdrop-blur-sm">
-                <CardHeader>
-                  <div className="p-3 bg-primary/20 rounded-full w-fit mb-4 group-hover:scale-110 transition-transform duration-300 ease-in-out">
-                    <ScanLine className="h-10 w-10 text-primary" />
-                  </div>
-                  <CardTitle className="font-headline text-2xl">1. Scan Produce</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground">Use your camera to take a picture of any fruit or vegetable.</p>
-                  <div className="overflow-hidden rounded-md mt-4 shadow-lg">
-                    <Image
-                      src="https://i.postimg.cc/Y2Nt6s3J/download.jpg"
-                      alt="Scanning food"
-                      width={300}
-                      height={200}
-                      className="group-hover:scale-105 transition-transform duration-300 ease-in-out"
-                    />
-                  </div>
-                </CardContent>
-              </Card>
+              <ElectricBorder color="hsl(var(--primary))" speed={1} chaos={0.6} thickness={2} style={{ borderRadius: '0.75rem' }}>
+                <Card className="shadow-lg group hover:scale-[1.02] transition-transform duration-300 ease-in-out cursor-pointer bg-card/80 backdrop-blur-sm h-full w-full">
+                  <CardHeader>
+                    <div className="p-3 bg-primary/20 rounded-full w-fit mb-4 group-hover:scale-110 transition-transform duration-300 ease-in-out">
+                      <ScanLine className="h-10 w-10 text-primary" />
+                    </div>
+                    <CardTitle className="font-headline text-2xl">1. Scan Produce</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-muted-foreground">Use your camera to take a picture of any fruit or vegetable.</p>
+                    <div className="overflow-hidden rounded-md mt-4 shadow-lg">
+                      <Image
+                        src="https://i.postimg.cc/Y2Nt6s3J/download.jpg"
+                        alt="Scanning food"
+                        width={300}
+                        height={200}
+                        className="group-hover:scale-105 transition-transform duration-300 ease-in-out"
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+              </ElectricBorder>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[525px] bg-popover border-accent/50 shadow-xl">
               <DialogHeader>
@@ -106,26 +109,28 @@ export default function HomePage() {
 
           <Dialog>
             <DialogTrigger asChild>
-              <Card className="border border-primary/50 shadow-[0_0_10px_2px_hsl(var(--primary)/0.4),0_0_20px_5px_hsl(var(--primary)/0.2)] hover:shadow-[0_0_18px_3px_hsl(var(--primary)/0.6),0_0_30px_8px_hsl(var(--primary)/0.3)] group hover:scale-[1.05] transition-all duration-300 ease-in-out animate-in fade-in slide-in-from-bottom-10 duration-500 delay-450 cursor-pointer bg-card/80 backdrop-blur-sm">
-                <CardHeader>
-                  <div className="p-3 bg-primary/20 rounded-full w-fit mb-4 group-hover:scale-110 transition-transform duration-300 ease-in-out">
-                    <Barcode className="h-10 w-10 text-primary" />
-                  </div>
-                  <CardTitle className="font-headline text-2xl">2. Enter Barcode</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground">For packaged items, enter the barcode number manually.</p>
-                   <div className="overflow-hidden rounded-md mt-4 shadow-lg">
-                    <Image
-                      src="https://i.postimg.cc/0j4c1Gmg/download.jpg"
-                      alt="Barcode entry"
-                      width={300}
-                      height={200}
-                      className="group-hover:scale-105 transition-transform duration-300 ease-in-out"
-                    />
-                  </div>
-                </CardContent>
-              </Card>
+              <ElectricBorder color="hsl(var(--primary))" speed={1} chaos={0.6} thickness={2} style={{ borderRadius: '0.75rem' }}>
+                <Card className="shadow-lg group hover:scale-[1.02] transition-transform duration-300 ease-in-out cursor-pointer bg-card/80 backdrop-blur-sm h-full w-full">
+                  <CardHeader>
+                    <div className="p-3 bg-primary/20 rounded-full w-fit mb-4 group-hover:scale-110 transition-transform duration-300 ease-in-out">
+                      <Barcode className="h-10 w-10 text-primary" />
+                    </div>
+                    <CardTitle className="font-headline text-2xl">2. Enter Barcode</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-muted-foreground">For packaged items, enter the barcode number manually.</p>
+                     <div className="overflow-hidden rounded-md mt-4 shadow-lg">
+                      <Image
+                        src="https://i.postimg.cc/0j4c1Gmg/download.jpg"
+                        alt="Barcode entry"
+                        width={300}
+                        height={200}
+                        className="group-hover:scale-105 transition-transform duration-300 ease-in-out"
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+              </ElectricBorder>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[525px] bg-popover border-accent/50 shadow-xl">
               <DialogHeader>
@@ -150,26 +155,28 @@ export default function HomePage() {
 
           <Dialog>
             <DialogTrigger asChild>
-              <Card className="border border-primary/50 shadow-[0_0_10px_2px_hsl(var(--primary)/0.4),0_0_20px_5px_hsl(var(--primary)/0.2)] hover:shadow-[0_0_18px_3px_hsl(var(--primary)/0.6),0_0_30px_8px_hsl(var(--primary)/0.3)] group hover:scale-[1.05] transition-all duration-300 ease-in-out animate-in fade-in slide-in-from-bottom-10 duration-500 delay-500 cursor-pointer bg-card/80 backdrop-blur-sm">
-                <CardHeader>
-                  <div className="p-3 bg-primary/20 rounded-full w-fit mb-4 group-hover:scale-110 transition-transform duration-300 ease-in-out">
-                    <Layers className="h-10 w-10 text-primary"/>
-                  </div>
-                  <CardTitle className="font-headline text-2xl">3. AI Analysis</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground">Our intelligent analysis algorithms process the image or barcode data.</p>
-                  <div className="overflow-hidden rounded-md mt-4 shadow-lg">
-                  <Image
-                    src="https://i.postimg.cc/nVKQXTQL/download.jpg"
-                    alt="AI Analysis"
-                    width={300}
-                    height={200}
-                    className="group-hover:scale-105 transition-transform duration-300 ease-in-out"
-                    />
-                  </div>
-                </CardContent>
-              </Card>
+              <ElectricBorder color="hsl(var(--primary))" speed={1} chaos={0.6} thickness={2} style={{ borderRadius: '0.75rem' }}>
+                <Card className="shadow-lg group hover:scale-[1.02] transition-transform duration-300 ease-in-out cursor-pointer bg-card/80 backdrop-blur-sm h-full w-full">
+                  <CardHeader>
+                    <div className="p-3 bg-primary/20 rounded-full w-fit mb-4 group-hover:scale-110 transition-transform duration-300 ease-in-out">
+                      <Layers className="h-10 w-10 text-primary"/>
+                    </div>
+                    <CardTitle className="font-headline text-2xl">3. AI Analysis</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-muted-foreground">Our intelligent analysis algorithms process the image or barcode data.</p>
+                    <div className="overflow-hidden rounded-md mt-4 shadow-lg">
+                    <Image
+                      src="https://i.postimg.cc/nVKQXTQL/download.jpg"
+                      alt="AI Analysis"
+                      width={300}
+                      height={200}
+                      className="group-hover:scale-105 transition-transform duration-300 ease-in-out"
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+              </ElectricBorder>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[525px] bg-popover border-accent/50 shadow-xl">
               <DialogHeader>
@@ -195,26 +202,28 @@ export default function HomePage() {
 
           <Dialog>
             <DialogTrigger asChild>
-              <Card className="border border-primary/50 shadow-[0_0_10px_2px_hsl(var(--primary)/0.4),0_0_20px_5px_hsl(var(--primary)/0.2)] hover:shadow-[0_0_18px_3px_hsl(var(--primary)/0.6),0_0_30px_8px_hsl(var(--primary)/0.3)] group hover:scale-[1.05] transition-all duration-300 ease-in-out animate-in fade-in slide-in-from-bottom-10 duration-500 delay-600 cursor-pointer bg-card/80 backdrop-blur-sm">
-                <CardHeader>
-                  <div className="p-3 bg-primary/20 rounded-full w-fit mb-4 group-hover:scale-110 transition-transform duration-300 ease-in-out">
-                    <Lightbulb className="h-10 w-10 text-primary" />
-                  </div>
-                  <CardTitle className="font-headline text-2xl">4. Get Insights</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground">Receive a detailed breakdown of components, potential chemicals, and edibility.</p>
-                  <div className="overflow-hidden rounded-md mt-4 shadow-lg">
-                  <Image
-                    src="https://i.postimg.cc/xd09Fy16/download.jpg"
-                    alt="Food Insights"
-                    width={300}
-                    height={200}
-                    className="group-hover:scale-105 transition-transform duration-300 ease-in-out"
-                    />
-                  </div>
-                </CardContent>
-              </Card>
+              <ElectricBorder color="hsl(var(--primary))" speed={1} chaos={0.6} thickness={2} style={{ borderRadius: '0.75rem' }}>
+                <Card className="shadow-lg group hover:scale-[1.02] transition-transform duration-300 ease-in-out cursor-pointer bg-card/80 backdrop-blur-sm h-full w-full">
+                  <CardHeader>
+                    <div className="p-3 bg-primary/20 rounded-full w-fit mb-4 group-hover:scale-110 transition-transform duration-300 ease-in-out">
+                      <Lightbulb className="h-10 w-10 text-primary" />
+                    </div>
+                    <CardTitle className="font-headline text-2xl">4. Get Insights</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-muted-foreground">Receive a detailed breakdown of components, potential chemicals, and edibility.</p>
+                    <div className="overflow-hidden rounded-md mt-4 shadow-lg">
+                    <Image
+                      src="https://i.postimg.cc/xd09Fy16/download.jpg"
+                      alt="Food Insights"
+                      width={300}
+                      height={200}
+                      className="group-hover:scale-105 transition-transform duration-300 ease-in-out"
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+              </ElectricBorder>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[525px] bg-popover border-accent/50 shadow-xl">
               <DialogHeader>
@@ -266,5 +275,3 @@ export default function HomePage() {
     </div>
   );
 }
-
-    
