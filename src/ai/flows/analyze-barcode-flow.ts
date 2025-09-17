@@ -104,7 +104,7 @@ const fetchProductInfoByBarcodeTool = ai.defineTool(
       return {
         isFound: true,
         productName: productName,
-        brand: product.brands || 'N_A',
+        brand: product.brands || 'N/A',
         ingredients: ingredientsArray.length > 0 ? ingredientsArray : (ingredientsString ? [ingredientsString] : []),
         allergens: allergensArray,
         imageUrl: product.image_url || undefined,
@@ -199,3 +199,4 @@ const analyzeBarcodeFlow = ai.defineFlow(
     }
   }
 );
+
