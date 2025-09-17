@@ -100,11 +100,19 @@ const fetchProductInfoByBarcodeTool = ai.defineTool(
         .map((tag: string) => tag.replace(/^[a-z]{2}:/, '').replace(/-/g, ' ').trim())
         .filter(allergen => allergen);
 
+      let finalIngredients: string[] = [];
+      if (ingredientsArray.length > 0) {
+        finalIngredients = ingredientsArray;
+      } else if (ingredientsString) {
+        // Fallback: If parsing fails but a string exists, use the whole string.
+        finalIngredients = [ingredientsString];
+      }
+
       return {
         isFound: true,
         productName: productName,
         brand: product.brands || 'N/A',
-        ingredients: ingredientsArray.length > 0 ? ingredientsArray : (ingredientsString ? [ingredientsString] : []),
+        ingredients: finalIngredients,
         allergens: allergensArray,
         imageUrl: product.image_url || undefined,
         source: 'Open Food Facts API',
@@ -198,3 +206,4 @@ const analyzeBarcodeFlow = ai.defineFlow(
     }
   }
 );
+
