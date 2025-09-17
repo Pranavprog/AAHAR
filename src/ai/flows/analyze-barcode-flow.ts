@@ -90,10 +90,12 @@ const fetchProductInfoByBarcodeTool = ai.defineTool(
       const productName = product.product_name_en || product.product_name || 'N/A';
       const ingredientsString = product.ingredients_text_en || product.ingredients_text || '';
       
+      // Simpler, more robust ingredient parsing
       const ingredientsArray = ingredientsString
-        .split(/[,;](?![^(]*\))(?![^[]*\])/g) 
-        .map(ing => ing.replace(/_/g, '').trim()) 
-        .filter(ing => ing);
+          .replace(/_/g, '') // remove underscores
+          .split(/[,;]\s*/) // split by comma or semicolon followed by optional space
+          .map(ing => ing.trim()) // trim whitespace
+          .filter(ing => ing); // remove any empty strings
 
       const allergensArray = (product.allergens_tags || [])
         .map((tag: string) => tag.replace(/^[a-z]{2}:/, '').replace(/-/g, ' ').trim())
@@ -102,7 +104,7 @@ const fetchProductInfoByBarcodeTool = ai.defineTool(
       return {
         isFound: true,
         productName: productName,
-        brand: product.brands || 'N/A',
+        brand: product.brands || 'N_A',
         ingredients: ingredientsArray.length > 0 ? ingredientsArray : (ingredientsString ? [ingredientsString] : []),
         allergens: allergensArray,
         imageUrl: product.image_url || undefined,
